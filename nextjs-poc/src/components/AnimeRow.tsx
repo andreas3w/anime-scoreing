@@ -1,14 +1,14 @@
 'use client';
 
 import { useTransition } from 'react';
-import type { Anime, Tag } from '@/types';
+import type { AnimeWithTags, Tag } from '@/lib/prisma';
 import { Button } from './ui/Button';
 import { TagsCell } from './TagsCell';
 import { useRowEditState } from '@/hooks/useRowEditState';
 import { saveTags } from '@/app/actions';
 
 interface AnimeRowProps {
-  anime: Anime;
+  anime: AnimeWithTags;
   allTags: Tag[];
 }
 

@@ -2,13 +2,13 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import type { Anime, Tag, FilterOptions, ImportResult } from '@/types';
+import type { AnimeWithTags, Tag, FilterOptions, ImportResult } from '@/lib/prisma';
 import { AnimeTable } from './AnimeTable';
 import { FilterBar } from './FilterBar';
 import { ImportButton } from './ImportButton';
 
 interface MainContentProps {
-  initialAnime: Anime[];
+  initialAnime: AnimeWithTags[];
   initialTags: Tag[];
 }
 

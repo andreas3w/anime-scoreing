@@ -1,11 +1,11 @@
 'use client';
 
-import type { Tag } from '@/types';
+import type { AnimeTag, Tag } from '@/lib/prisma';
 import { TagBadge } from './TagBadge';
 import { TagEditor } from './TagEditor';
 
 interface TagsCellProps {
-  tags: Tag[];
+  tags: AnimeTag[];
   allTags: Tag[];
   isEditing: boolean;
   currentTags: string[];
@@ -21,8 +21,9 @@ export const TagsCell: React.FC<TagsCellProps> = ({
   onAddTag,
   onRemoveTag,
 }) => {
-  const statusTags = tags.filter((tag) => tag.isStatus);
-  const customTags = tags.filter((tag) => !tag.isStatus);
+  // Extract tag from junction table
+  const statusTags = tags.filter((at) => at.tag.isStatus).map((at) => at.tag);
+  const customTags = tags.filter((at) => !at.tag.isStatus).map((at) => at.tag);
 
   if (isEditing) {
     return (

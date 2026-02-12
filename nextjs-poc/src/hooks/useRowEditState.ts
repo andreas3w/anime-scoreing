@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import type { Tag } from '@/types';
+import type { AnimeTag } from '@/lib/prisma';
 
 interface RowEditState {
   isEditing: boolean;
@@ -10,7 +10,7 @@ interface RowEditState {
 
 interface UseRowEditStateResult {
   editState: RowEditState;
-  startEdit: (existingTags: Tag[]) => void;
+  startEdit: (existingTags: AnimeTag[]) => void;
   cancelEdit: () => void;
   addTag: (tagName: string) => void;
   removeTag: (tagName: string) => void;
@@ -23,10 +23,11 @@ export const useRowEditState = (): UseRowEditStateResult => {
     currentTags: [],
   });
 
-  const startEdit = useCallback((existingTags: Tag[]) => {
+  const startEdit = useCallback((existingTags: AnimeTag[]) => {
+    // Extract custom tag names from junction table
     const customTagNames = existingTags
-      .filter((tag) => !tag.isStatus)
-      .map((tag) => tag.name);
+      .filter((at) => !at.tag.isStatus)
+      .map((at) => at.tag.name);
     
     setEditState({
       isEditing: true,

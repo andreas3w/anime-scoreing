@@ -76,12 +76,12 @@ export async function saveTags(animeId: number, tagNames: string[]) {
 - **Styling**: Tailwind CSS 4 (uses CSS-first configuration)
 - **State Management**: React hooks for local state, URL params for shared state
 - **Components**: Functional components only, no class components
+- **Types**: Use Prisma-generated types directly from `@/lib/prisma` - no custom type files needed
 - **File Structure**:
   - Radix wrapper components in `/src/components/ui/`
   - Feature components in `/src/components/`
   - Custom hooks in `/src/hooks/`
-  - Type definitions in `/src/types/`
-  - Prisma client in `/src/lib/prisma.ts`
+  - Prisma client and type exports in `/src/lib/prisma.ts`
 
 ### Database Rules
 - **ORM**: Prisma (never write raw SQL)
@@ -120,12 +120,10 @@ nextjs-poc/
 │   │   └── ImportButton.tsx  # MAL XML import modal
 │   ├── hooks/
 │   │   └── useDebounce.ts
-│   ├── lib/
-│   │   └── prisma.ts         # Prisma client singleton
-│   └── types/
-│       └── index.ts          # Shared type definitions
+│   └── lib/
+│       └── prisma.ts         # Prisma client singleton
 ├── prisma/
-│   └── schema.prisma         # Database schema
+│   └── schema.prisma         # Database schema (types generated from here)
 ├── data/
 │   └── anime.db              # SQLite database file
 ├── package.json

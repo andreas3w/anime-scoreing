@@ -3,7 +3,7 @@
 import { useState, useRef, useTransition } from 'react';
 import { Button } from './ui/Button';
 import { importMalXml } from '@/app/actions';
-import type { ImportResult } from '@/types';
+import type { ImportResult } from '@/lib/prisma';
 
 interface ImportButtonProps {
   onImportComplete?: (result: ImportResult) => void;

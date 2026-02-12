@@ -5,7 +5,7 @@ import { Input } from './ui/Input';
 import { Select } from './ui/Select';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
-import type { FilterOptions, Tag } from '@/types';
+import type { FilterOptions, Tag } from '@/lib/prisma';
 
 interface FilterBarProps {
   filters: FilterOptions;

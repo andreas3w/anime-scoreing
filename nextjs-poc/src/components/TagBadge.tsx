@@ -1,4 +1,4 @@
-import type { Tag } from '@/types';
+import type { Tag } from '@/lib/prisma';
 
 interface TagBadgeProps {
   tag: Tag;

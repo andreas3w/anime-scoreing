@@ -1,10 +1,10 @@
 'use client';
 
-import type { Anime, Tag } from '@/types';
+import type { AnimeWithTags, Tag } from '@/lib/prisma';
 import { AnimeRow } from './AnimeRow';
 
 interface AnimeTableProps {
-  anime: Anime[];
+  anime: AnimeWithTags[];
   tags: Tag[];
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
