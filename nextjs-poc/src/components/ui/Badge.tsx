@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import { DEFAULT_TAG_COLOR } from '@/lib/prisma';
+import { getColor } from '@/lib/prisma';
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -11,11 +11,13 @@ interface BadgeProps {
 
 export const Badge: React.FC<BadgeProps> = ({
   children,
-  color = DEFAULT_TAG_COLOR,
+  color,
   isStatus = false,
   onRemove,
   className,
 }) => {
+  const backgroundColor = color || getColor('DEFAULT');
+  
   return (
     <span
       className={clsx(
@@ -23,7 +25,7 @@ export const Badge: React.FC<BadgeProps> = ({
         isStatus && 'ring-1 ring-white/20',
         className
       )}
-      style={{ backgroundColor: color }}
+      style={{ backgroundColor }}
     >
       {children}
       {onRemove && (

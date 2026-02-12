@@ -1,4 +1,5 @@
 import type { Tag } from '@/lib/prisma';
+import { getColor } from '@/lib/prisma';
 
 interface TagBadgeProps {
   tag: Tag;
@@ -13,7 +14,7 @@ export const TagBadge: React.FC<TagBadgeProps> = ({ tag }) => {
       className={`inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-medium leading-none text-white ${
         isSystemTag ? 'ring-1 ring-white/20' : ''
       }`}
-      style={{ backgroundColor: tag.color }}
+      style={{ backgroundColor: getColor(tag.colorKey) }}
     >
       {tag.name}
     </span>

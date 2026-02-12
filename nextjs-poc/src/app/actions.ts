@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma, STATUS_COLORS, TYPE_COLORS, TAG_COLORS } from '@/lib/prisma';
+import { prisma, getColorKeyForTag, getRandomCustomColorKey } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { XMLParser } from 'fast-xml-parser';
 
@@ -10,28 +10,23 @@ const JIKAN_API_BASE = 'https://api.jikan.moe/v4';
 // Rate limiting helper - Jikan has a 3 requests/second limit
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Pick a random color from the palette
-function getRandomTagColor(): string {
-  return TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
-}
-
 // Server Action: Save tags for an anime
 // Called directly from client components - no API endpoint needed!
 export async function saveTags(animeId: number, tagNames: string[]) {
-  // Remove existing custom tags (not status or type tags)
+  // Remove existing custom tags (not status, type, studio, or genre tags)
   await prisma.animeTag.deleteMany({
     where: {
       animeId,
-      tag: { isStatus: false, isType: false },
+      tag: { isStatus: false, isType: false, isStudio: false, isGenre: false },
     },
   });
 
   // Add new tags
   for (const name of tagNames) {
-    // Find or create tag with random color for new tags
+    // Find or create tag - custom tags get random color
     const tag = await prisma.tag.upsert({
       where: { name },
-      create: { name, isStatus: false, color: getRandomTagColor() },
+      create: { name, colorKey: getRandomCustomColorKey() },
       update: {},
     });
 
@@ -106,7 +101,7 @@ export async function importMalXml(formData: FormData) {
         // Add new type tag
         const typeTag = await prisma.tag.upsert({
           where: { name: animeType },
-          create: { name: animeType, isType: true, color: getTypeColor(animeType) },
+          create: { name: animeType, isType: true, colorKey: getColorKeyForTag(animeType, false) },
           update: {},
         });
         await prisma.animeTag.create({
@@ -128,7 +123,7 @@ export async function importMalXml(formData: FormData) {
         // Add new status tag
         const statusTag = await prisma.tag.upsert({
           where: { name: statusName },
-          create: { name: statusName, isStatus: true, color: getStatusColor(statusName) },
+          create: { name: statusName, isStatus: true, colorKey: getColorKeyForTag(statusName, false) },
           update: {},
         });
         await prisma.animeTag.create({
@@ -145,7 +140,7 @@ export async function importMalXml(formData: FormData) {
       if (animeType) {
         const typeTag = await prisma.tag.upsert({
           where: { name: animeType },
-          create: { name: animeType, isType: true, color: getTypeColor(animeType) },
+          create: { name: animeType, isType: true, colorKey: getColorKeyForTag(animeType, false) },
           update: {},
         });
         await prisma.animeTag.create({
@@ -158,7 +153,7 @@ export async function importMalXml(formData: FormData) {
       if (statusName) {
         const statusTag = await prisma.tag.upsert({
           where: { name: statusName },
-          create: { name: statusName, isStatus: true, color: getStatusColor(statusName) },
+          create: { name: statusName, isStatus: true, colorKey: getColorKeyForTag(statusName, false) },
           update: {},
         });
         await prisma.animeTag.create({
@@ -170,14 +165,6 @@ export async function importMalXml(formData: FormData) {
 
   revalidatePath('/');
   return { created, updated, failed: 0, total: entries.length };
-}
-
-function getStatusColor(status: string): string {
-  return STATUS_COLORS[status] || getRandomTagColor();
-}
-
-function getTypeColor(type: string): string {
-  return TYPE_COLORS[type] || getRandomTagColor();
 }
 
 // Interface for Jikan API response
@@ -249,7 +236,30 @@ async function fetchAnimeFromJikan(malId: number, retries = 3): Promise<JikanFet
         return null;
       }
       
-      const data: JikanAnimeResponse = await response.json();
+      // Parse JSON with error handling for malformed responses
+      let data: JikanAnimeResponse;
+      try {
+        const text = await response.text();
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.error(`Failed to parse JSON for malId ${malId}:`, parseError);
+        if (attempt < retries) {
+          await delay(2000);
+          continue;
+        }
+        return null;
+      }
+      
+      // Validate that we got the expected data structure
+      if (!data?.data) {
+        console.error(`Invalid response structure for malId ${malId}`);
+        if (attempt < retries) {
+          await delay(2000);
+          continue;
+        }
+        return null;
+      }
+      
       return {
         titleEnglish: data.data.title_english || null,
         titleJapanese: data.data.title_japanese || null,
@@ -283,9 +293,8 @@ export async function getAnimeMissingData(): Promise<{ id: number; malId: number
   return animeMissingData;
 }
 
-// Colors for studio and genre tags (darker for better contrast)
+// Colors for studio tags (darker for better contrast)
 const STUDIO_COLOR = '#7e22ce'; // Purple 700
-const GENRE_COLOR = '#0e7490';  // Cyan 700
 
 // Helper to create studio/genre tags for an anime
 async function createTagsForAnime(animeId: number, studios: string[], genres: string[]) {
@@ -293,7 +302,7 @@ async function createTagsForAnime(animeId: number, studios: string[], genres: st
   for (const studioName of studios) {
     const tag = await prisma.tag.upsert({
       where: { name: studioName },
-      create: { name: studioName, isStudio: true, color: STUDIO_COLOR },
+      create: { name: studioName, isStudio: true, colorKey: getColorKeyForTag(studioName, true) },
       update: {},
     });
     await prisma.animeTag.upsert({
@@ -303,11 +312,11 @@ async function createTagsForAnime(animeId: number, studios: string[], genres: st
     });
   }
   
-  // Create genre tags
+  // Create genre tags with specific colors per genre
   for (const genreName of genres) {
     const tag = await prisma.tag.upsert({
       where: { name: genreName },
-      create: { name: genreName, isGenre: true, color: GENRE_COLOR },
+      create: { name: genreName, isGenre: true, colorKey: getColorKeyForTag(genreName, false) },
       update: {},
     });
     await prisma.animeTag.upsert({

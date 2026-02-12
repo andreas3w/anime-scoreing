@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { Tag } from '@/lib/prisma';
+import { getColor } from '@/lib/prisma';
 import { Badge } from './ui/Badge';
 
 interface TagEditorProps {
@@ -94,7 +95,7 @@ export const TagEditor: React.FC<TagEditorProps> = ({
         return (
           <Badge
             key={tagName}
-            color={tagInfo?.color || '#4338ca'}
+            color={tagInfo ? getColor(tagInfo.colorKey) : getColor('DEFAULT')}
             onRemove={() => onRemoveTag(tagName)}
           >
             {tagName}
@@ -130,7 +131,7 @@ export const TagEditor: React.FC<TagEditorProps> = ({
               >
                 <span
                   className="w-3 h-3 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: tag.color }}
+                  style={{ backgroundColor: getColor(tag.colorKey) }}
                 />
                 <span className="text-white truncate">{tag.name}</span>
               </button>

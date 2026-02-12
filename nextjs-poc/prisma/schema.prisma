@@ -7,6 +7,9 @@ datasource db {
   url      = "file:../data/anime.db"
 }
 
+// Note: SQLite doesn't support enums, so colorKey is stored as String
+// Valid values defined in src/lib/prisma.ts as ColorKey type
+
 model Anime {
   id                 Int        @id @default(autoincrement())
   malId              Int        @unique
@@ -34,7 +37,7 @@ model Anime {
 model Tag {
   id       Int        @id @default(autoincrement())
   name     String     @unique
-  color    String     @default("#4338ca")
+  colorKey String     @default("DEFAULT")
   isStatus Boolean    @default(false)
   isType   Boolean    @default(false)
   isStudio Boolean    @default(false)

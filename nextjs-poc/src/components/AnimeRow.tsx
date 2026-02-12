@@ -2,6 +2,7 @@
 
 import { useTransition } from 'react';
 import type { AnimeWithTags, Tag } from '@/lib/prisma';
+import { getColor } from '@/lib/prisma';
 import { Button } from './ui/Button';
 import { TagsCell } from './TagsCell';
 import { useRowEditState } from '@/hooks/useRowEditState';
@@ -104,7 +105,7 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay
             <span
               key={at.tag.id}
               className="inline-flex items-center justify-center px-2 py-1 text-xs leading-none rounded-full text-white"
-              style={{ backgroundColor: at.tag.color }}
+              style={{ backgroundColor: getColor(at.tag.colorKey) }}
             >
               {at.tag.name}
             </span>
@@ -119,7 +120,7 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay
             <span
               key={at.tag.id}
               className="inline-flex items-center justify-center px-2 py-1 text-xs leading-none rounded-full text-white"
-              style={{ backgroundColor: at.tag.color }}
+              style={{ backgroundColor: getColor(at.tag.colorKey) }}
             >
               {at.tag.name}
             </span>
@@ -133,11 +134,11 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay
           {studioTags.slice(0, 2).map((at) => (
             <span
               key={at.tag.id}
-              className="inline-flex items-center justify-center px-2 py-1 text-xs leading-none rounded-full text-white truncate max-w-[120px]"
-              style={{ backgroundColor: at.tag.color }}
+              className="inline-flex items-center justify-center px-2 py-1 text-xs leading-none rounded-full text-white max-w-[120px]"
+              style={{ backgroundColor: getColor(at.tag.colorKey) }}
               title={at.tag.name}
             >
-              {at.tag.name}
+              <span className="truncate">{at.tag.name}</span>
             </span>
           ))}
           {studioTags.length > 2 && (
@@ -153,7 +154,7 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay
             <span
               key={at.tag.id}
               className="inline-flex items-center justify-center px-2 py-1 text-xs leading-none rounded-full text-white"
-              style={{ backgroundColor: at.tag.color }}
+              style={{ backgroundColor: getColor(at.tag.colorKey) }}
             >
               {at.tag.name}
             </span>

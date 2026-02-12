@@ -6,6 +6,7 @@ import { Select } from './ui/Select';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 import type { FilterOptions, Tag } from '@/lib/prisma';
+import { getColor } from '@/lib/prisma';
 
 interface FilterBarProps {
   filters: FilterOptions;
@@ -156,7 +157,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, tags, onFiltersCh
                   : 'opacity-50 hover:opacity-75'
               }`}
             >
-              <Badge color={tag.color} isStatus={tag.isStatus || tag.isType}>
+              <Badge color={getColor(tag.colorKey)} isStatus={tag.isStatus || tag.isType}>
                 {tag.name}
               </Badge>
             </button>
