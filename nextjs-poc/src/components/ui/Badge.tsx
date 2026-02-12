@@ -21,7 +21,7 @@ export const Badge: React.FC<BadgeProps> = ({
   return (
     <span
       className={clsx(
-        'inline-flex items-center justify-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium leading-none text-white',
+        'inline-flex items-center justify-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-white',
         isStatus && 'ring-1 ring-white/20',
         className
       )}

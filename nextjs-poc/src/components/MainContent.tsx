@@ -11,7 +11,7 @@ import { FetchTitlesButton } from './FetchTitlesButton';
 interface MainContentProps {
   initialAnime: AnimeWithTags[];
   initialTags: Tag[];
-  titleDisplay: 'default' | 'english' | 'japanese';
+  titleDisplay: 'default' | 'english';
 }
 
 export const MainContent: React.FC<MainContentProps> = ({ initialAnime, initialTags, titleDisplay }) => {
@@ -24,10 +24,13 @@ export const MainContent: React.FC<MainContentProps> = ({ initialAnime, initialT
     search: searchParams.get('search') || undefined,
     sortBy: searchParams.get('sortBy') || undefined,
     sortOrder: (searchParams.get('sortOrder') as 'asc' | 'desc') || undefined,
-    minScore: searchParams.get('minScore') ? parseInt(searchParams.get('minScore')!, 10) : undefined,
-    maxScore: searchParams.get('maxScore') ? parseInt(searchParams.get('maxScore')!, 10) : undefined,
-    tags: searchParams.get('tags') || undefined,
-    titleDisplay: (searchParams.get('titleDisplay') as 'default' | 'english' | 'japanese') || 'default',
+    scores: searchParams.get('scores') 
+      ? searchParams.get('scores')!.split(',').map(Number) 
+      : undefined,
+    tags: searchParams.get('tags') 
+      ? searchParams.get('tags')!.split(',').map(Number) 
+      : undefined,
+    titleDisplay: (searchParams.get('titleDisplay') as 'default' | 'english') || 'default',
   };
 
   // Update URL when filters change (triggers server re-fetch)
@@ -37,9 +40,12 @@ export const MainContent: React.FC<MainContentProps> = ({ initialAnime, initialT
     if (newFilters.search) params.set('search', newFilters.search);
     if (newFilters.sortBy) params.set('sortBy', newFilters.sortBy);
     if (newFilters.sortOrder) params.set('sortOrder', newFilters.sortOrder);
-    if (newFilters.minScore) params.set('minScore', String(newFilters.minScore));
-    if (newFilters.maxScore) params.set('maxScore', String(newFilters.maxScore));
-    if (newFilters.tags) params.set('tags', newFilters.tags);
+    if (newFilters.scores && newFilters.scores.length > 0) {
+      params.set('scores', newFilters.scores.join(','));
+    }
+    if (newFilters.tags && newFilters.tags.length > 0) {
+      params.set('tags', newFilters.tags.join(','));
+    }
     if (newFilters.titleDisplay && newFilters.titleDisplay !== 'default') {
       params.set('titleDisplay', newFilters.titleDisplay);
     }
@@ -55,6 +61,17 @@ export const MainContent: React.FC<MainContentProps> = ({ initialAnime, initialT
       sortBy: newSortBy,
       sortOrder: newSortOrder,
     });
+  }, [filters, handleFiltersChange]);
+
+  // Handle clicking on a tag in the list to add it to filters
+  const handleTagClick = useCallback((tagId: number) => {
+    const currentTagIds = filters.tags ?? [];
+    if (!currentTagIds.includes(tagId)) {
+      handleFiltersChange({
+        ...filters,
+        tags: [...currentTagIds, tagId],
+      });
+    }
   }, [filters, handleFiltersChange]);
 
   const handleImportComplete = useCallback((result: ImportResult) => {
@@ -107,6 +124,7 @@ export const MainContent: React.FC<MainContentProps> = ({ initialAnime, initialT
           sortOrder={filters.sortOrder}
           onSort={handleSort}
           titleDisplay={titleDisplay}
+          onTagClick={handleTagClick}
         />
       </div>
     </div>

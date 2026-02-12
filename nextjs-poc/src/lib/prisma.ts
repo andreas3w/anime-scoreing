@@ -77,10 +77,9 @@ export interface FilterOptions {
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-  minScore?: number;
-  maxScore?: number;
-  tags?: string;
-  titleDisplay?: 'default' | 'english' | 'japanese';
+  scores?: number[]; // Selected score values (e.g., [1, 7, 8, 10])
+  tags?: number[]; // Selected tag IDs
+  titleDisplay?: 'default' | 'english';
 }
 
 // Import result from Server Action

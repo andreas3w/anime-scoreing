@@ -23,29 +23,39 @@ export default async function HomePage({
     ];
   }
   
-  if (params.minScore || params.maxScore) {
-    where.myScore = {
-      ...(params.minScore && { gte: parseInt(String(params.minScore), 10) }),
-      ...(params.maxScore && { lte: parseInt(String(params.maxScore), 10) }),
-    };
+  // Filter by selected scores (can select multiple, e.g., [1, 7, 8, 10])
+  if (params.scores) {
+    const scoreValues = String(params.scores).split(',').map(Number);
+    where.myScore = { in: scoreValues };
   }
   
   if (params.tags) {
     const tagIds = String(params.tags).split(',').map(Number);
-    where.tags = {
-      some: {
-        tagId: { in: tagIds },
+    // AND filter: anime must have ALL selected tags
+    where.AND = tagIds.map((tagId) => ({
+      tags: {
+        some: {
+          tagId: tagId,
+        },
       },
-    };
+    }));
   }
 
   // Build sort options
   const orderBy: Record<string, string> = {};
   const sortBy = params.sortBy ? String(params.sortBy) : 'myScore';
   const sortOrder = params.sortOrder ? String(params.sortOrder) : 'desc';
+  const titleDisplay = (params.titleDisplay as 'default' | 'english') || 'default';
   
   if (sortBy === 'updatedAt') {
     orderBy.myLastUpdated = sortOrder;
+  } else if (sortBy === 'title') {
+    // Sort by the selected title display field
+    if (titleDisplay === 'english') {
+      orderBy.titleEnglish = sortOrder;
+    } else {
+      orderBy.title = sortOrder;
+    }
   } else if (sortBy) {
     orderBy[sortBy] = sortOrder;
   }
@@ -65,9 +75,6 @@ export default async function HomePage({
   const allTags = await prisma.tag.findMany({
     orderBy: { name: 'asc' },
   });
-
-  // Get title display preference from URL params
-  const titleDisplay = (params.titleDisplay as 'default' | 'english' | 'japanese') || 'default';
 
   return <MainContent initialAnime={animeList} initialTags={allTags} titleDisplay={titleDisplay} />;
 }

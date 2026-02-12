@@ -14,42 +14,19 @@ interface FilterBarProps {
   onFiltersChange: (filters: FilterOptions) => void;
 }
 
-const sortByOptions = [
-  { value: '_default', label: 'Default' },
-  { value: 'title', label: 'Title' },
-  { value: 'myScore', label: 'Score' },
-  { value: 'type', label: 'Type' },
-  { value: 'updatedAt', label: 'Last Updated' },
-];
-
-const sortOrderOptions = [
-  { value: 'asc', label: 'Ascending' },
-  { value: 'desc', label: 'Descending' },
-];
-
 const titleDisplayOptions = [
-  { value: 'default', label: 'Romaji' },
+  { value: 'default', label: 'Original' },
   { value: 'english', label: 'English' },
-  { value: 'japanese', label: 'Japanese' },
 ];
 
-const scoreOptions = [
-  { value: '_any', label: 'Any' },
-  { value: '1', label: '1' },
-  { value: '2', label: '2' },
-  { value: '3', label: '3' },
-  { value: '4', label: '4' },
-  { value: '5', label: '5' },
-  { value: '6', label: '6' },
-  { value: '7', label: '7' },
-  { value: '8', label: '8' },
-  { value: '9', label: '9' },
-  { value: '10', label: '10' },
-];
+const SCORE_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
 
 export const FilterBar: React.FC<FilterBarProps> = ({ filters, tags, onFiltersChange }) => {
   const [search, setSearch] = useState(filters.search || '');
-  const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set());
+  
+  // Derive selected IDs from filters (arrays)
+  const selectedTagIds = new Set<number>(filters.tags ?? []);
+  const selectedScores = new Set<number>(filters.scores ?? []);
 
   const handleSearchChange = useCallback(
     (value: string) => {
@@ -59,54 +36,31 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, tags, onFiltersCh
     [filters, onFiltersChange]
   );
 
-  const handleSortByChange = useCallback(
-    (value: string) => {
-      onFiltersChange({
-        ...filters,
-        sortBy: value === '_default' ? undefined : value,
-      });
-    },
-    [filters, onFiltersChange]
-  );
-
-  const handleSortOrderChange = useCallback(
-    (value: string) => {
-      onFiltersChange({
-        ...filters,
-        sortOrder: (value as 'asc' | 'desc') || undefined,
-      });
-    },
-    [filters, onFiltersChange]
-  );
-
   const handleTitleDisplayChange = useCallback(
     (value: string) => {
       onFiltersChange({
         ...filters,
-        titleDisplay: (value as 'default' | 'english' | 'japanese') || 'default',
+        titleDisplay: (value as 'default' | 'english') || 'default',
       });
     },
     [filters, onFiltersChange]
   );
 
-  const handleMinScoreChange = useCallback(
-    (value: string) => {
-      onFiltersChange({
-        ...filters,
-        minScore: value === '_any' ? undefined : parseInt(value, 10),
-      });
-    },
-    [filters, onFiltersChange]
-  );
+  const toggleScore = useCallback(
+    (score: number) => {
+      const newSelected = new Set(selectedScores);
+      if (newSelected.has(score)) {
+        newSelected.delete(score);
+      } else {
+        newSelected.add(score);
+      }
 
-  const handleMaxScoreChange = useCallback(
-    (value: string) => {
       onFiltersChange({
         ...filters,
-        maxScore: value === '_any' ? undefined : parseInt(value, 10),
+        scores: newSelected.size > 0 ? Array.from(newSelected) : undefined,
       });
     },
-    [filters, onFiltersChange]
+    [selectedScores, filters, onFiltersChange]
   );
 
   const toggleTag = useCallback(
@@ -117,17 +71,17 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, tags, onFiltersCh
       } else {
         newSelected.add(tagId);
       }
-      setSelectedTagIds(newSelected);
 
-      const tagIdsStr = newSelected.size > 0 ? Array.from(newSelected).join(',') : undefined;
-      onFiltersChange({ ...filters, tags: tagIdsStr });
+      onFiltersChange({
+        ...filters,
+        tags: newSelected.size > 0 ? Array.from(newSelected) : undefined,
+      });
     },
     [selectedTagIds, filters, onFiltersChange]
   );
 
   const clearFilters = useCallback(() => {
     setSearch('');
-    setSelectedTagIds(new Set());
     onFiltersChange({});
   }, [onFiltersChange]);
 
@@ -189,43 +143,29 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, tags, onFiltersCh
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-400">Sort by:</span>
-          <Select
-            options={sortByOptions}
-            value={filters.sortBy || '_default'}
-            onValueChange={handleSortByChange}
-            placeholder="Sort by..."
-          />
-          <Select
-            options={sortOrderOptions}
-            value={filters.sortOrder || 'asc'}
-            onValueChange={handleSortOrderChange}
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-slate-400">Score:</span>
-          <Select
-            options={scoreOptions}
-            value={filters.minScore?.toString() || '_any'}
-            onValueChange={handleMinScoreChange}
-            placeholder="Min"
-            className="w-20"
-          />
-          <span className="text-slate-600">–</span>
-          <Select
-            options={scoreOptions}
-            value={filters.maxScore?.toString() || '_any'}
-            onValueChange={handleMaxScoreChange}
-            placeholder="Max"
-            className="w-20"
-          />
-        </div>
-
         <Button variant="ghost" size="sm" onClick={clearFilters}>
           Clear
         </Button>
+      </div>
+
+      {/* Score Filter Row */}
+      <div className="flex flex-wrap items-center gap-2 py-2 border-t border-slate-800">
+        <span className="text-sm text-slate-400 w-16 flex-shrink-0">Score:</span>
+        {SCORE_VALUES.map((score) => (
+          <button
+            key={score}
+            onClick={() => toggleScore(score)}
+            className={`transition-all ${
+              selectedScores.has(score)
+                ? 'opacity-100 scale-105'
+                : 'opacity-50 hover:opacity-75'
+            }`}
+          >
+            <Badge color="#4338ca" isStatus>
+              {score}
+            </Badge>
+          </button>
+        ))}
       </div>
 
       {/* Tag Filter Rows - each type on its own row */}

@@ -11,25 +11,11 @@ import { saveTags } from '@/app/actions';
 interface AnimeRowProps {
   anime: AnimeWithTags;
   allTags: Tag[];
-  titleDisplay: 'default' | 'english' | 'japanese';
+  titleDisplay: 'default' | 'english';
+  onTagClick: (tagId: number) => void;
 }
 
-// Helper to get the display title based on preference
-function getDisplayTitle(
-  anime: AnimeWithTags,
-  titleDisplay: 'default' | 'english' | 'japanese'
-): string {
-  switch (titleDisplay) {
-    case 'english':
-      return anime.titleEnglish || anime.title;
-    case 'japanese':
-      return anime.titleJapanese || anime.title;
-    default:
-      return anime.title;
-  }
-}
-
-export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay }) => {
+export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay, onTagClick }) => {
   const { editState, startEdit, cancelEdit, addTag, removeTag, getCurrentTags } = useRowEditState();
   const [isPending, startTransition] = useTransition();
 
@@ -40,9 +26,12 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay
     });
   };
 
-  const displayTitle = getDisplayTitle(anime, titleDisplay);
-  // Show the default/romaji title as subtitle when showing a different title
-  const subtitleTitle = titleDisplay !== 'default' && displayTitle !== anime.title ? anime.title : null;
+  // Always show Romaji as the main title
+  const mainTitle = anime.title;
+  // Show English subtitle when Romaji or English is selected (if available and different from main title)
+  const subtitleTitle = (titleDisplay === 'default' || titleDisplay === 'english') && anime.titleEnglish && anime.titleEnglish !== mainTitle
+    ? anime.titleEnglish
+    : null;
 
   // Categorize tags
   const statusTags = anime.tags.filter((at) => at.tag.isStatus);
@@ -78,7 +67,7 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay
           </div>
           {/* Title */}
           <div className="min-w-0 flex-1">
-            <div className="truncate max-w-[180px]" title={displayTitle}>{displayTitle}</div>
+            <div className="truncate max-w-[180px]" title={mainTitle}>{mainTitle}</div>
             {subtitleTitle && (
               <div className="text-xs text-slate-500 truncate max-w-[180px]" title={subtitleTitle}>{subtitleTitle}</div>
             )}
@@ -102,13 +91,14 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay
       <td className="px-4 py-3">
         <div className="flex flex-wrap gap-1">
           {statusTags.map((at) => (
-            <span
+            <button
               key={at.tag.id}
-              className="inline-flex items-center justify-center px-2 py-1 text-xs leading-none rounded-full text-white"
+              onClick={() => onTagClick(at.tag.id)}
+              className="inline-flex items-center justify-center px-2 py-1 text-xs rounded-full text-white cursor-pointer hover:opacity-80 transition-opacity"
               style={{ backgroundColor: getColor(at.tag.colorKey) }}
             >
               {at.tag.name}
-            </span>
+            </button>
           ))}
         </div>
       </td>
@@ -117,13 +107,14 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay
       <td className="px-4 py-3">
         <div className="flex flex-wrap gap-1">
           {typeTags.map((at) => (
-            <span
+            <button
               key={at.tag.id}
-              className="inline-flex items-center justify-center px-2 py-1 text-xs leading-none rounded-full text-white"
+              onClick={() => onTagClick(at.tag.id)}
+              className="inline-flex items-center justify-center px-2 py-1 text-xs rounded-full text-white cursor-pointer hover:opacity-80 transition-opacity"
               style={{ backgroundColor: getColor(at.tag.colorKey) }}
             >
               {at.tag.name}
-            </span>
+            </button>
           ))}
         </div>
       </td>
@@ -132,14 +123,15 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay
       <td className="px-4 py-3 max-w-[150px]">
         <div className="flex flex-wrap gap-1">
           {studioTags.slice(0, 2).map((at) => (
-            <span
+            <button
               key={at.tag.id}
-              className="inline-flex items-center justify-center px-2 py-1 text-xs leading-none rounded-full text-white max-w-[120px]"
+              onClick={() => onTagClick(at.tag.id)}
+              className="inline-flex items-center justify-center px-2 py-1 text-xs rounded-full text-white max-w-[120px] cursor-pointer hover:opacity-80 transition-opacity"
               style={{ backgroundColor: getColor(at.tag.colorKey) }}
               title={at.tag.name}
             >
               <span className="truncate">{at.tag.name}</span>
-            </span>
+            </button>
           ))}
           {studioTags.length > 2 && (
             <span className="text-xs text-slate-500">+{studioTags.length - 2}</span>
@@ -151,13 +143,14 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay
       <td className="px-4 py-3 max-w-[200px]">
         <div className="flex flex-wrap gap-1">
           {genreTags.slice(0, 3).map((at) => (
-            <span
+            <button
               key={at.tag.id}
-              className="inline-flex items-center justify-center px-2 py-1 text-xs leading-none rounded-full text-white"
+              onClick={() => onTagClick(at.tag.id)}
+              className="inline-flex items-center justify-center px-2 py-1 text-xs rounded-full text-white cursor-pointer hover:opacity-80 transition-opacity"
               style={{ backgroundColor: getColor(at.tag.colorKey) }}
             >
               {at.tag.name}
-            </span>
+            </button>
           ))}
           {genreTags.length > 3 && (
             <span className="text-xs text-slate-500">+{genreTags.length - 3}</span>
