@@ -1,8 +1,13 @@
 'use server';
 
-import { prisma, STATUS_COLORS, TYPE_COLORS, DEFAULT_TAG_COLOR } from '@/lib/prisma';
+import { prisma, STATUS_COLORS, TYPE_COLORS, TAG_COLORS } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { XMLParser } from 'fast-xml-parser';
+
+// Pick a random color from the palette
+function getRandomTagColor(): string {
+  return TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
+}
 
 // Server Action: Save tags for an anime
 // Called directly from client components - no API endpoint needed!
@@ -17,10 +22,10 @@ export async function saveTags(animeId: number, tagNames: string[]) {
 
   // Add new tags
   for (const name of tagNames) {
-    // Find or create tag
+    // Find or create tag with random color for new tags
     const tag = await prisma.tag.upsert({
       where: { name },
-      create: { name, isStatus: false },
+      create: { name, isStatus: false, color: getRandomTagColor() },
       update: {},
     });
 
@@ -162,9 +167,9 @@ export async function importMalXml(formData: FormData) {
 }
 
 function getStatusColor(status: string): string {
-  return STATUS_COLORS[status] || DEFAULT_TAG_COLOR;
+  return STATUS_COLORS[status] || getRandomTagColor();
 }
 
 function getTypeColor(type: string): string {
-  return TYPE_COLORS[type] || DEFAULT_TAG_COLOR;
+  return TYPE_COLORS[type] || getRandomTagColor();
 }
