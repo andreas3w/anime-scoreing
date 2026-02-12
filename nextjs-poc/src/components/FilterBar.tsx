@@ -26,6 +26,12 @@ const sortOrderOptions = [
   { value: 'desc', label: 'Descending' },
 ];
 
+const titleDisplayOptions = [
+  { value: 'default', label: 'Romaji' },
+  { value: 'english', label: 'English' },
+  { value: 'japanese', label: 'Japanese' },
+];
+
 const scoreOptions = [
   { value: '_any', label: 'Any' },
   { value: '1', label: '1' },
@@ -67,6 +73,16 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, tags, onFiltersCh
       onFiltersChange({
         ...filters,
         sortOrder: (value as 'asc' | 'desc') || undefined,
+      });
+    },
+    [filters, onFiltersChange]
+  );
+
+  const handleTitleDisplayChange = useCallback(
+    (value: string) => {
+      onFiltersChange({
+        ...filters,
+        titleDisplay: (value as 'default' | 'english' | 'japanese') || 'default',
       });
     },
     [filters, onFiltersChange]
@@ -114,9 +130,41 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, tags, onFiltersCh
     onFiltersChange({});
   }, [onFiltersChange]);
 
-  const typeTags = tags.filter((t) => t.isType);
+  // Categorize tags by type
   const statusTags = tags.filter((t) => t.isStatus);
-  const customTags = tags.filter((t) => !t.isStatus && !t.isType);
+  const typeTags = tags.filter((t) => t.isType);
+  const studioTags = tags.filter((t) => t.isStudio);
+  const genreTags = tags.filter((t) => t.isGenre);
+  const customTags = tags.filter((t) => !t.isStatus && !t.isType && !t.isStudio && !t.isGenre);
+
+  // Render a row of tag pills
+  const renderTagRow = (label: string, tagList: Tag[], showIfEmpty = false) => {
+    if (tagList.length === 0 && !showIfEmpty) return null;
+    return (
+      <div className="flex flex-wrap items-center gap-2 py-2 border-t border-slate-800">
+        <span className="text-sm text-slate-400 w-16 flex-shrink-0">{label}:</span>
+        {tagList.length === 0 ? (
+          <span className="text-sm text-slate-600 italic">None</span>
+        ) : (
+          tagList.map((tag) => (
+            <button
+              key={tag.id}
+              onClick={() => toggleTag(tag.id)}
+              className={`transition-all ${
+                selectedTagIds.has(tag.id) 
+                  ? 'opacity-100 scale-105' 
+                  : 'opacity-50 hover:opacity-75'
+              }`}
+            >
+              <Badge color={tag.color} isStatus={tag.isStatus || tag.isType}>
+                {tag.name}
+              </Badge>
+            </button>
+          ))
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-4">
@@ -128,6 +176,15 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, tags, onFiltersCh
             value={search}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Search by title..."
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-slate-400">Title:</span>
+          <Select
+            options={titleDisplayOptions}
+            value={filters.titleDisplay || 'default'}
+            onValueChange={handleTitleDisplayChange}
           />
         </div>
 
@@ -170,49 +227,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, tags, onFiltersCh
         </Button>
       </div>
 
-      {/* Tags Filter Row */}
-      {(typeTags.length > 0 || statusTags.length > 0 || customTags.length > 0) && (
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-slate-400 mr-2">Filter by tag:</span>
-          {typeTags.map((tag) => (
-            <button
-              key={tag.id}
-              onClick={() => toggleTag(tag.id)}
-              className={`transition-opacity ${selectedTagIds.has(tag.id) ? 'opacity-100' : 'opacity-50 hover:opacity-75'}`}
-            >
-              <Badge color={tag.color} isStatus>
-                {tag.name}
-              </Badge>
-            </button>
-          ))}
-          {typeTags.length > 0 && statusTags.length > 0 && (
-            <span className="text-slate-700 mx-1">|</span>
-          )}
-          {statusTags.map((tag) => (
-            <button
-              key={tag.id}
-              onClick={() => toggleTag(tag.id)}
-              className={`transition-opacity ${selectedTagIds.has(tag.id) ? 'opacity-100' : 'opacity-50 hover:opacity-75'}`}
-            >
-              <Badge color={tag.color} isStatus>
-                {tag.name}
-              </Badge>
-            </button>
-          ))}
-          {(typeTags.length > 0 || statusTags.length > 0) && customTags.length > 0 && (
-            <span className="text-slate-700 mx-1">|</span>
-          )}
-          {customTags.map((tag) => (
-            <button
-              key={tag.id}
-              onClick={() => toggleTag(tag.id)}
-              className={`transition-opacity ${selectedTagIds.has(tag.id) ? 'opacity-100' : 'opacity-50 hover:opacity-75'}`}
-            >
-              <Badge color={tag.color}>{tag.name}</Badge>
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Tag Filter Rows - each type on its own row */}
+      {renderTagRow('Status', statusTags)}
+      {renderTagRow('Type', typeTags)}
+      {renderTagRow('Studio', studioTags)}
+      {renderTagRow('Genre', genreTags)}
+      {renderTagRow('Tags', customTags)}
     </div>
   );
 };

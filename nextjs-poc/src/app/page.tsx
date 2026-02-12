@@ -13,8 +13,14 @@ export default async function HomePage({
   // Build filter conditions from URL params
   const where: Record<string, unknown> = {};
   
+  // Search across all title fields (default, english, japanese)
   if (params.search) {
-    where.title = { contains: String(params.search) };
+    const searchTerm = String(params.search);
+    where.OR = [
+      { title: { contains: searchTerm } },
+      { titleEnglish: { contains: searchTerm } },
+      { titleJapanese: { contains: searchTerm } },
+    ];
   }
   
   if (params.minScore || params.maxScore) {
@@ -60,5 +66,8 @@ export default async function HomePage({
     orderBy: { name: 'asc' },
   });
 
-  return <MainContent initialAnime={animeList} initialTags={allTags} />;
+  // Get title display preference from URL params
+  const titleDisplay = (params.titleDisplay as 'default' | 'english' | 'japanese') || 'default';
+
+  return <MainContent initialAnime={animeList} initialTags={allTags} titleDisplay={titleDisplay} />;
 }

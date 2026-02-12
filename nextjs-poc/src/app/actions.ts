@@ -4,6 +4,12 @@ import { prisma, STATUS_COLORS, TYPE_COLORS, TAG_COLORS } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { XMLParser } from 'fast-xml-parser';
 
+// Jikan API base URL
+const JIKAN_API_BASE = 'https://api.jikan.moe/v4';
+
+// Rate limiting helper - Jikan has a 3 requests/second limit
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 // Pick a random color from the palette
 function getRandomTagColor(): string {
   return TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
@@ -172,4 +178,288 @@ function getStatusColor(status: string): string {
 
 function getTypeColor(type: string): string {
   return TYPE_COLORS[type] || getRandomTagColor();
+}
+
+// Interface for Jikan API response
+interface JikanAnimeResponse {
+  data: {
+    mal_id: number;
+    title: string;
+    title_english: string | null;
+    title_japanese: string | null;
+    synopsis: string | null;
+    year: number | null;
+    images: {
+      jpg: {
+        image_url: string;
+        small_image_url: string;
+        large_image_url: string;
+      };
+    };
+    trailer: {
+      youtube_id: string | null;
+      url: string | null;
+    } | null;
+    studios: Array<{ mal_id: number; name: string }>;
+    genres: Array<{ mal_id: number; name: string }>;
+  };
+}
+
+// Data returned from Jikan fetch
+interface JikanFetchResult {
+  titleEnglish: string | null;
+  titleJapanese: string | null;
+  imageUrl: string | null;
+  synopsis: string | null;
+  trailerUrl: string | null;
+  year: number | null;
+  studios: string[];
+  genres: string[];
+}
+
+// Fetch anime data from Jikan API with retry logic
+async function fetchAnimeFromJikan(malId: number, retries = 3): Promise<JikanFetchResult | null> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(`${JIKAN_API_BASE}/anime/${malId}`);
+      
+      // Handle rate limiting (429) with exponential backoff
+      if (response.status === 429) {
+        console.log(`Rate limited for malId ${malId}, attempt ${attempt}/${retries}, waiting...`);
+        if (attempt < retries) {
+          // Wait longer on each retry: 2s, 4s, 8s
+          await delay(2000 * Math.pow(2, attempt - 1));
+          continue;
+        }
+        return null;
+      }
+      
+      // Handle 404 - anime doesn't exist
+      if (response.status === 404) {
+        console.log(`Anime not found for malId ${malId}`);
+        return null;
+      }
+      
+      if (!response.ok) {
+        console.error(`Jikan API error for malId ${malId}: ${response.status}`);
+        if (attempt < retries) {
+          await delay(2000);
+          continue;
+        }
+        return null;
+      }
+      
+      const data: JikanAnimeResponse = await response.json();
+      return {
+        titleEnglish: data.data.title_english || null,
+        titleJapanese: data.data.title_japanese || null,
+        imageUrl: data.data.images?.jpg?.image_url || null,
+        synopsis: data.data.synopsis || null,
+        trailerUrl: data.data.trailer?.url || null,
+        year: data.data.year || null,
+        studios: data.data.studios?.map(s => s.name) || [],
+        genres: data.data.genres?.map(g => g.name) || [],
+      };
+    } catch (error) {
+      console.error(`Failed to fetch from Jikan for malId ${malId}:`, error);
+      if (attempt < retries) {
+        await delay(2000 * attempt);
+        continue;
+      }
+      return null;
+    }
+  }
+  return null;
+}
+
+// Server Action: Get list of anime missing data (for progress tracking)
+export async function getAnimeMissingData(): Promise<{ id: number; malId: number; title: string }[]> {
+  const animeMissingData = await prisma.anime.findMany({
+    where: {
+      dataFetched: false,
+    },
+    select: { id: true, malId: true, title: true },
+  });
+  return animeMissingData;
+}
+
+// Colors for studio and genre tags (darker for better contrast)
+const STUDIO_COLOR = '#7e22ce'; // Purple 700
+const GENRE_COLOR = '#0e7490';  // Cyan 700
+
+// Helper to create studio/genre tags for an anime
+async function createTagsForAnime(animeId: number, studios: string[], genres: string[]) {
+  // Create studio tags
+  for (const studioName of studios) {
+    const tag = await prisma.tag.upsert({
+      where: { name: studioName },
+      create: { name: studioName, isStudio: true, color: STUDIO_COLOR },
+      update: {},
+    });
+    await prisma.animeTag.upsert({
+      where: { animeId_tagId: { animeId, tagId: tag.id } },
+      create: { animeId, tagId: tag.id },
+      update: {},
+    });
+  }
+  
+  // Create genre tags
+  for (const genreName of genres) {
+    const tag = await prisma.tag.upsert({
+      where: { name: genreName },
+      create: { name: genreName, isGenre: true, color: GENRE_COLOR },
+      update: {},
+    });
+    await prisma.animeTag.upsert({
+      where: { animeId_tagId: { animeId, tagId: tag.id } },
+      create: { animeId, tagId: tag.id },
+      update: {},
+    });
+  }
+}
+
+// Server Action: Fetch data for a single anime by ID (returns the fetched data for UI)
+export async function fetchSingleAnimeData(animeId: number): Promise<{
+  success: boolean;
+  title?: string;
+  titleEnglish?: string | null;
+  titleJapanese?: string | null;
+  imageUrl?: string | null;
+} | null> {
+  const anime = await prisma.anime.findUnique({
+    where: { id: animeId },
+    select: { id: true, malId: true, title: true },
+  });
+
+  if (!anime) return { success: false };
+
+  const result = await fetchAnimeFromJikan(anime.malId);
+  
+  // Always mark as fetched, even if result is null (anime not found on MAL)
+  if (!result) {
+    await prisma.anime.update({
+      where: { id: animeId },
+      data: { dataFetched: true },
+    });
+    return { success: false, title: anime.title };
+  }
+
+  // Update anime with fetched data
+  await prisma.anime.update({
+    where: { id: animeId },
+    data: {
+      titleEnglish: result.titleEnglish,
+      titleJapanese: result.titleJapanese,
+      imageUrl: result.imageUrl,
+      synopsis: result.synopsis,
+      trailerUrl: result.trailerUrl,
+      year: result.year,
+      dataFetched: true,
+    },
+  });
+
+  // Create studio and genre tags
+  await createTagsForAnime(animeId, result.studios, result.genres);
+
+  return {
+    success: true,
+    title: anime.title,
+    titleEnglish: result.titleEnglish,
+    titleJapanese: result.titleJapanese,
+    imageUrl: result.imageUrl,
+  };
+}
+
+// Server Action: Revalidate the page (call after batch fetching is complete)
+export async function revalidateAnimePage() {
+  revalidatePath('/');
+}
+
+// Server Action: Fetch English/Japanese titles and images for all anime missing them
+export async function fetchMissingTitles(): Promise<{ updated: number; failed: number; total: number }> {
+  // Find anime that haven't been fetched yet
+  const animeMissingData = await prisma.anime.findMany({
+    where: {
+      dataFetched: false,
+    },
+    select: { id: true, malId: true, title: true },
+  });
+
+  let updated = 0;
+  let failed = 0;
+
+  for (const anime of animeMissingData) {
+    // Rate limiting - Jikan API is strict, use 1.5 seconds between requests
+    // This is slower but more reliable
+    await delay(1500);
+
+    const result = await fetchAnimeFromJikan(anime.malId);
+    if (result) {
+      await prisma.anime.update({
+        where: { id: anime.id },
+        data: {
+          titleEnglish: result.titleEnglish,
+          titleJapanese: result.titleJapanese,
+          imageUrl: result.imageUrl,
+          synopsis: result.synopsis,
+          trailerUrl: result.trailerUrl,
+          year: result.year,
+          dataFetched: true,
+        },
+      });
+      // Create studio and genre tags
+      await createTagsForAnime(anime.id, result.studios, result.genres);
+      updated++;
+      console.log(`✓ Updated ${anime.title} (${updated}/${animeMissingData.length})`);
+    } else {
+      // Mark as fetched even on failure so we don't retry forever
+      await prisma.anime.update({
+        where: { id: anime.id },
+        data: { dataFetched: true },
+      });
+      failed++;
+      console.log(`✗ Failed ${anime.title} (malId: ${anime.malId})`);
+    }
+  }
+
+  revalidatePath('/');
+  return { updated, failed, total: animeMissingData.length };
+}
+
+// Server Action: Fetch data for a single anime
+export async function fetchTitlesForAnime(animeId: number): Promise<boolean> {
+  const anime = await prisma.anime.findUnique({
+    where: { id: animeId },
+    select: { id: true, malId: true },
+  });
+
+  if (!anime) return false;
+
+  const result = await fetchAnimeFromJikan(anime.malId);
+  if (!result) {
+    await prisma.anime.update({
+      where: { id: animeId },
+      data: { dataFetched: true },
+    });
+    return false;
+  }
+
+  await prisma.anime.update({
+    where: { id: animeId },
+    data: {
+      titleEnglish: result.titleEnglish,
+      titleJapanese: result.titleJapanese,
+      imageUrl: result.imageUrl,
+      synopsis: result.synopsis,
+      trailerUrl: result.trailerUrl,
+      year: result.year,
+      dataFetched: true,
+    },
+  });
+
+  // Create studio and genre tags
+  await createTagsForAnime(animeId, result.studios, result.genres);
+
+  revalidatePath('/');
+  return true;
 }

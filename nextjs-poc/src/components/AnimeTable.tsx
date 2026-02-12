@@ -9,12 +9,17 @@ interface AnimeTableProps {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
   onSort: (field: string) => void;
+  titleDisplay: 'default' | 'english' | 'japanese';
 }
 
 const columns = [
   { key: 'title', label: 'Title', sortable: true },
   { key: 'myScore', label: 'Score', sortable: true },
   { key: 'episodes', label: 'Progress', sortable: false },
+  { key: 'status', label: 'Status', sortable: false },
+  { key: 'type', label: 'Type', sortable: false },
+  { key: 'studio', label: 'Studio', sortable: false },
+  { key: 'genre', label: 'Genre', sortable: false },
   { key: 'tags', label: 'Tags', sortable: false },
   { key: 'actions', label: '', sortable: false },
 ];
@@ -25,6 +30,7 @@ export const AnimeTable: React.FC<AnimeTableProps> = ({
   sortBy,
   sortOrder,
   onSort,
+  titleDisplay,
 }) => {
   const getSortIcon = (field: string) => {
     if (sortBy !== field) return <SortIcon />;
@@ -64,7 +70,7 @@ export const AnimeTable: React.FC<AnimeTableProps> = ({
         </thead>
         <tbody>
           {anime.map((item) => (
-            <AnimeRow key={item.id} anime={item} allTags={tags} />
+            <AnimeRow key={item.id} anime={item} allTags={tags} titleDisplay={titleDisplay} />
           ))}
         </tbody>
       </table>

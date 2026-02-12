@@ -10,9 +10,25 @@ import { saveTags } from '@/app/actions';
 interface AnimeRowProps {
   anime: AnimeWithTags;
   allTags: Tag[];
+  titleDisplay: 'default' | 'english' | 'japanese';
 }
 
-export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags }) => {
+// Helper to get the display title based on preference
+function getDisplayTitle(
+  anime: AnimeWithTags,
+  titleDisplay: 'default' | 'english' | 'japanese'
+): string {
+  switch (titleDisplay) {
+    case 'english':
+      return anime.titleEnglish || anime.title;
+    case 'japanese':
+      return anime.titleJapanese || anime.title;
+    default:
+      return anime.title;
+  }
+}
+
+export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay }) => {
   const { editState, startEdit, cancelEdit, addTag, removeTag, getCurrentTags } = useRowEditState();
   const [isPending, startTransition] = useTransition();
 
@@ -23,38 +39,144 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags }) => {
     });
   };
 
-  const formatDate = (dateStr?: string | null) => {
-    if (!dateStr || dateStr === '0000-00-00') return '—';
-    try {
-      return new Date(dateStr).toLocaleDateString();
-    } catch {
-      return '—';
-    }
-  };
+  const displayTitle = getDisplayTitle(anime, titleDisplay);
+  // Show the default/romaji title as subtitle when showing a different title
+  const subtitleTitle = titleDisplay !== 'default' && displayTitle !== anime.title ? anime.title : null;
+
+  // Categorize tags
+  const statusTags = anime.tags.filter((at) => at.tag.isStatus);
+  const typeTags = anime.tags.filter((at) => at.tag.isType);
+  const studioTags = anime.tags.filter((at) => at.tag.isStudio);
+  const genreTags = anime.tags.filter((at) => at.tag.isGenre);
+  const customTags = anime.tags.filter((at) => !at.tag.isStatus && !at.tag.isType && !at.tag.isStudio && !at.tag.isGenre);
 
   return (
     <tr className="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
-      <td className="px-4 py-3 font-medium text-white max-w-xs truncate" title={anime.title}>
-        {anime.title}
+      {/* Title Cell */}
+      <td className="px-4 py-3 font-medium text-white max-w-[250px]">
+        <a
+          href={`https://myanimelist.net/anime/${anime.malId}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-3 hover:text-blue-400 transition-colors"
+        >
+          {/* Cover Image */}
+          <div className="flex-shrink-0 w-10 h-14 bg-slate-800 rounded overflow-hidden">
+            {anime.imageUrl ? (
+              <img
+                src={anime.imageUrl}
+                alt={anime.title}
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-slate-600">
+                <ImagePlaceholderIcon />
+              </div>
+            )}
+          </div>
+          {/* Title */}
+          <div className="min-w-0 flex-1">
+            <div className="truncate max-w-[180px]" title={displayTitle}>{displayTitle}</div>
+            {subtitleTitle && (
+              <div className="text-xs text-slate-500 truncate max-w-[180px]" title={subtitleTitle}>{subtitleTitle}</div>
+            )}
+          </div>
+        </a>
       </td>
+
+      {/* Score Cell */}
       <td className="px-4 py-3 text-center">
         <span className={anime.myScore > 0 ? 'text-amber-400 font-bold' : 'text-slate-500'}>
           {anime.myScore > 0 ? anime.myScore : '—'}
         </span>
       </td>
-      <td className="px-4 py-3 text-slate-300 text-center">
+
+      {/* Progress Cell */}
+      <td className="px-4 py-3 text-slate-300 text-center whitespace-nowrap">
         {anime.myWatchedEpisodes}/{anime.episodes || '?'}
       </td>
-      <td className="px-4 py-3 min-w-[200px]">
+
+      {/* Status Cell */}
+      <td className="px-4 py-3">
+        <div className="flex flex-wrap gap-1">
+          {statusTags.map((at) => (
+            <span
+              key={at.tag.id}
+              className="inline-flex items-center justify-center px-2 py-1 text-xs leading-none rounded-full text-white"
+              style={{ backgroundColor: at.tag.color }}
+            >
+              {at.tag.name}
+            </span>
+          ))}
+        </div>
+      </td>
+
+      {/* Type Cell */}
+      <td className="px-4 py-3">
+        <div className="flex flex-wrap gap-1">
+          {typeTags.map((at) => (
+            <span
+              key={at.tag.id}
+              className="inline-flex items-center justify-center px-2 py-1 text-xs leading-none rounded-full text-white"
+              style={{ backgroundColor: at.tag.color }}
+            >
+              {at.tag.name}
+            </span>
+          ))}
+        </div>
+      </td>
+
+      {/* Studio Cell */}
+      <td className="px-4 py-3 max-w-[150px]">
+        <div className="flex flex-wrap gap-1">
+          {studioTags.slice(0, 2).map((at) => (
+            <span
+              key={at.tag.id}
+              className="inline-flex items-center justify-center px-2 py-1 text-xs leading-none rounded-full text-white truncate max-w-[120px]"
+              style={{ backgroundColor: at.tag.color }}
+              title={at.tag.name}
+            >
+              {at.tag.name}
+            </span>
+          ))}
+          {studioTags.length > 2 && (
+            <span className="text-xs text-slate-500">+{studioTags.length - 2}</span>
+          )}
+        </div>
+      </td>
+
+      {/* Genre Cell */}
+      <td className="px-4 py-3 max-w-[200px]">
+        <div className="flex flex-wrap gap-1">
+          {genreTags.slice(0, 3).map((at) => (
+            <span
+              key={at.tag.id}
+              className="inline-flex items-center justify-center px-2 py-1 text-xs leading-none rounded-full text-white"
+              style={{ backgroundColor: at.tag.color }}
+            >
+              {at.tag.name}
+            </span>
+          ))}
+          {genreTags.length > 3 && (
+            <span className="text-xs text-slate-500">+{genreTags.length - 3}</span>
+          )}
+        </div>
+      </td>
+
+      {/* Custom Tags Cell */}
+      <td className="px-4 py-3 min-w-[150px]">
         <TagsCell
-          tags={anime.tags}
-          allTags={allTags}
+          tags={customTags}
+          allTags={allTags.filter((t) => !t.isStatus && !t.isType && !t.isStudio && !t.isGenre)}
           isEditing={editState.isEditing}
           currentTags={editState.currentTags}
           onAddTag={addTag}
           onRemoveTag={removeTag}
         />
       </td>
+
+      {/* Actions Cell */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-2 justify-end">
           {editState.isEditing ? (
@@ -76,3 +198,9 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags }) => {
     </tr>
   );
 };
+
+const ImagePlaceholderIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  </svg>
+);

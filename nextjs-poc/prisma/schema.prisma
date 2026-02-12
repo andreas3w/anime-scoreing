@@ -11,6 +11,13 @@ model Anime {
   id                 Int        @id @default(autoincrement())
   malId              Int        @unique
   title              String
+  titleEnglish       String?
+  titleJapanese      String?
+  imageUrl           String?
+  synopsis           String?
+  trailerUrl         String?
+  year               Int?
+  dataFetched        Boolean    @default(false)
   type               String?
   episodes           Int?
   myScore            Int        @default(0)
@@ -27,9 +34,11 @@ model Anime {
 model Tag {
   id       Int        @id @default(autoincrement())
   name     String     @unique
-  color    String     @default("#4f46e5")
+  color    String     @default("#4338ca")
   isStatus Boolean    @default(false)
   isType   Boolean    @default(false)
+  isStudio Boolean    @default(false)
+  isGenre  Boolean    @default(false)
   anime    AnimeTag[]
 }
 

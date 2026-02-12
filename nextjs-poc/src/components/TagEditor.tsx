@@ -7,7 +7,6 @@ import { Badge } from './ui/Badge';
 interface TagEditorProps {
   currentTags: string[];
   allTags: Tag[];
-  statusTags: Tag[];
   onAddTag: (tagName: string) => void;
   onRemoveTag: (tagName: string) => void;
 }
@@ -15,7 +14,6 @@ interface TagEditorProps {
 export const TagEditor: React.FC<TagEditorProps> = ({
   currentTags,
   allTags,
-  statusTags,
   onAddTag,
   onRemoveTag,
 }) => {
@@ -25,7 +23,8 @@ export const TagEditor: React.FC<TagEditorProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
-  const customTags = allTags.filter((t) => !t.isStatus);
+  // Only show custom tags (not status, type, studio, or genre)
+  const customTags = allTags.filter((t) => !t.isStatus && !t.isType && !t.isStudio && !t.isGenre);
 
   const suggestions = customTags.filter((tag) => {
     const matchesInput = tag.name.toLowerCase().includes(inputValue.toLowerCase());
@@ -90,18 +89,12 @@ export const TagEditor: React.FC<TagEditorProps> = ({
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {statusTags.map((tag) => (
-        <Badge key={tag.id} color={tag.color} isStatus className="opacity-70">
-          {tag.name}
-        </Badge>
-      ))}
-
       {currentTags.map((tagName) => {
         const tagInfo = getTagInfo(tagName);
         return (
           <Badge
             key={tagName}
-            color={tagInfo?.color || '#6366f1'}
+            color={tagInfo?.color || '#4338ca'}
             onRemove={() => onRemoveTag(tagName)}
           >
             {tagName}

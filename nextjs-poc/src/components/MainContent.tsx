@@ -6,13 +6,15 @@ import type { AnimeWithTags, Tag, FilterOptions, ImportResult } from '@/lib/pris
 import { AnimeTable } from './AnimeTable';
 import { FilterBar } from './FilterBar';
 import { ImportButton } from './ImportButton';
+import { FetchTitlesButton } from './FetchTitlesButton';
 
 interface MainContentProps {
   initialAnime: AnimeWithTags[];
   initialTags: Tag[];
+  titleDisplay: 'default' | 'english' | 'japanese';
 }
 
-export const MainContent: React.FC<MainContentProps> = ({ initialAnime, initialTags }) => {
+export const MainContent: React.FC<MainContentProps> = ({ initialAnime, initialTags, titleDisplay }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
@@ -25,6 +27,7 @@ export const MainContent: React.FC<MainContentProps> = ({ initialAnime, initialT
     minScore: searchParams.get('minScore') ? parseInt(searchParams.get('minScore')!, 10) : undefined,
     maxScore: searchParams.get('maxScore') ? parseInt(searchParams.get('maxScore')!, 10) : undefined,
     tags: searchParams.get('tags') || undefined,
+    titleDisplay: (searchParams.get('titleDisplay') as 'default' | 'english' | 'japanese') || 'default',
   };
 
   // Update URL when filters change (triggers server re-fetch)
@@ -37,6 +40,9 @@ export const MainContent: React.FC<MainContentProps> = ({ initialAnime, initialT
     if (newFilters.minScore) params.set('minScore', String(newFilters.minScore));
     if (newFilters.maxScore) params.set('maxScore', String(newFilters.maxScore));
     if (newFilters.tags) params.set('tags', newFilters.tags);
+    if (newFilters.titleDisplay && newFilters.titleDisplay !== 'default') {
+      params.set('titleDisplay', newFilters.titleDisplay);
+    }
 
     router.push(`?${params.toString()}`);
   }, [router]);
@@ -71,7 +77,10 @@ export const MainContent: React.FC<MainContentProps> = ({ initialAnime, initialT
                   : 'Import your MAL export to get started'}
               </p>
             </div>
-            <ImportButton onImportComplete={handleImportComplete} />
+            <div className="flex gap-2">
+              <FetchTitlesButton />
+              <ImportButton onImportComplete={handleImportComplete} />
+            </div>
           </div>
 
           {/* Import Result Notification */}
@@ -97,6 +106,7 @@ export const MainContent: React.FC<MainContentProps> = ({ initialAnime, initialT
           sortBy={filters.sortBy}
           sortOrder={filters.sortOrder}
           onSort={handleSort}
+          titleDisplay={titleDisplay}
         />
       </div>
     </div>

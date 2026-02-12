@@ -24,9 +24,9 @@ export const useRowEditState = (): UseRowEditStateResult => {
   });
 
   const startEdit = useCallback((existingTags: AnimeTag[]) => {
-    // Extract custom tag names from junction table (exclude status and type tags)
+    // Extract custom tag names from junction table (exclude status, type, studio, and genre tags)
     const customTagNames = existingTags
-      .filter((at) => !at.tag.isStatus && !at.tag.isType)
+      .filter((at) => !at.tag.isStatus && !at.tag.isType && !at.tag.isStudio && !at.tag.isGenre)
       .map((at) => at.tag.name);
     
     setEditState({
