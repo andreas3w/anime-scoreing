@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../data/anime.db"
+}
+
+model Anime {
+  id                 Int        @id @default(autoincrement())
+  malId              Int        @unique
+  title              String
+  type               String?
+  episodes           Int?
+  myScore            Int        @default(0)
+  myStatus           String?
+  myWatchedEpisodes  Int        @default(0)
+  myStartDate        String?
+  myFinishDate       String?
+  myLastUpdated      String?
+  tags               AnimeTag[]
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+}
+
+model Tag {
+  id       Int        @id @default(autoincrement())
+  name     String     @unique
+  color    String     @default("#6366f1")
+  isStatus Boolean    @default(false)
+  anime    AnimeTag[]
+}
+
+model AnimeTag {
+  animeId Int
+  tagId   Int
+  anime   Anime @relation(fields: [animeId], references: [id], onDelete: Cascade)
+  tag     Tag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([animeId, tagId])
+}
