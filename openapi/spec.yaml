@@ -51,16 +51,12 @@ paths:
           in: query
           description: Field to sort by
           schema:
-            type: string
-            enum: [title, myScore, type, updatedAt]
-            default: title
+            $ref: '#/components/schemas/SortBy'
         - name: sortOrder
           in: query
           description: Sort order
           schema:
-            type: string
-            enum: [asc, desc]
-            default: asc
+            $ref: '#/components/schemas/SortOrder'
       responses:
         '200':
           description: List of anime
@@ -409,3 +405,13 @@ components:
       required:
         - message
         - statusCode
+
+    SortBy:
+      type: string
+      enum: [title, myScore, type, updatedAt]
+      default: title
+
+    SortOrder:
+      type: string
+      enum: [asc, desc]
+      default: asc

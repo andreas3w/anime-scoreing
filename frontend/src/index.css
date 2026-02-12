@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* Custom theme colors for dark mode anime list manager */
+:root {
+  --color-background: #020617;
+  --color-surface: #0f172a;
+  --color-border: #1e293b;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #94a3b8;
+}

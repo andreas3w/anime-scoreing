@@ -1,3 +1,6 @@
+---
+applyTo: '**'
+---
 # Anime List Manager - AI Agent Instructions
 
 ## Project Overview
@@ -25,9 +28,18 @@ You are building an **Anime List Manager** - a self-hosted web application for m
   4. Implement business logic in service classes
   5. Controllers use generated DTOs and delegate to services
 - **Generated Files**:
-  - Backend: `/backend/src/generated/` (controllers, models)
+  - Backend: `/backend/src/generated/` (controllers, models, api interfaces)
   - Frontend: `/frontend/src/generated/api/` (API client)
-- **DO NOT** edit generated files - they will be overwritten
+
+#### ⚠️ CRITICAL: Generated Files Policy
+- **NEVER edit files in `/backend/src/generated/` or `/frontend/src/generated/`**
+- Generated files are abstract classes/interfaces meant to be **implemented**, not modified
+- Any changes to generated files will be **lost** on next regeneration
+- If generated code doesn't work correctly (e.g., missing decorators for file uploads):
+  1. Create a **custom controller/service** in `/src/controllers/` or `/src/services/`
+  2. Override the route by registering your custom controller in the module
+  3. Import and use the generated types/models, but implement logic separately
+- To fix issues with generated code, modify the **OpenAPI spec** and regenerate
 
 ### NestJS Backend Rules
 - **Framework**: NestJS 10+
@@ -525,6 +537,7 @@ Always refer to `PROJECT_PLAN.md` for:
 
 ## Do NOT
 
+- ❌ **Edit files in `/src/generated/` folders** - they are regenerated and changes will be lost
 - ❌ Use `any` type (use `unknown` if truly unknown, then narrow)
 - ❌ Write raw SQL queries (use Prisma)
 - ❌ Use class components in React
