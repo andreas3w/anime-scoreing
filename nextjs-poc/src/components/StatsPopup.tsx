@@ -59,6 +59,23 @@ export const StatsPopup: React.FC<StatsPopupProps> = ({ anime, tags }) => {
       }
     }
 
+    // Calculate studio statistics separately
+    const studioStatsMap = new Map<number, { count: number; totalScore: number; scoredCount: number }>();
+    
+    for (const a of anime) {
+      for (const at of a.tags) {
+        if (!at.tag.isStudio) continue;
+
+        const existing = studioStatsMap.get(at.tag.id) || { count: 0, totalScore: 0, scoredCount: 0 };
+        existing.count++;
+        if (a.myScore > 0) {
+          existing.totalScore += a.myScore;
+          existing.scoredCount++;
+        }
+        studioStatsMap.set(at.tag.id, existing);
+      }
+    }
+
     // Convert to array and calculate averages
     const tagStats: TagStats[] = [];
     for (const [tagId, data] of tagStatsMap) {
@@ -71,6 +88,33 @@ export const StatsPopup: React.FC<StatsPopupProps> = ({ anime, tags }) => {
         });
       }
     }
+
+    // Calculate studio statistics
+    const studioStats: TagStats[] = [];
+    for (const [tagId, data] of studioStatsMap) {
+      const tag = tags.find((t) => t.id === tagId);
+      if (tag && data.scoredCount >= 2) { // Min 2 scored anime
+        const studioAvgScore = data.totalScore / data.scoredCount;
+        studioStats.push({
+          tag,
+          count: data.scoredCount,
+          avgScore: studioAvgScore,
+        });
+      }
+    }
+
+    // Use Bayesian average to rank studios fairly
+    // Formula: (count × avgScore + m × globalAvg) / (count + m)
+    // This pulls small sample sizes toward the global average
+    const m = 5; // Minimum votes before score is trusted
+    const bestStudios = studioStats
+      .map((s) => ({
+        ...s,
+        // Bayesian weighted score - studios with few shows get pulled toward global avg
+        weightedScore: (s.count * s.avgScore + m * avgScore) / (s.count + m),
+      }))
+      .sort((a, b) => b.weightedScore - a.weightedScore)
+      .slice(0, 5);
 
     // Sort by count and get top 5
     const topTags = tagStats.sort((a, b) => b.count - a.count).slice(0, 5);
@@ -94,6 +138,7 @@ export const StatsPopup: React.FC<StatsPopupProps> = ({ anime, tags }) => {
       mostCommonScore: mostCommonScore ? { score: parseInt(mostCommonScore[0]), count: mostCommonScore[1] } : null,
       topTags,
       highestRatedTags,
+      bestStudios,
       totalEpisodes,
       totalHours,
       totalDays,
@@ -108,7 +153,7 @@ export const StatsPopup: React.FC<StatsPopupProps> = ({ anime, tags }) => {
 
       {isOpen && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-900 rounded-lg w-full max-w-2xl border border-slate-700 max-h-[90vh] overflow-y-auto">
+          <div className="bg-slate-900 rounded-lg w-full max-w-4xl border border-slate-700 max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-slate-800">
               <h2 className="text-xl font-bold text-white">📊 Your Anime Stats</h2>
@@ -194,10 +239,10 @@ export const StatsPopup: React.FC<StatsPopupProps> = ({ anime, tags }) => {
               </div>
 
               {/* Top Tags */}
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-3 gap-6">
                 {/* Most Watched */}
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-4">🏆 Top 5 Genres/Tags</h3>
+                  <h3 className="text-lg font-semibold text-white mb-4">🏆 Top Genres/Tags</h3>
                   <div className="space-y-3">
                     {stats.topTags.map((ts, index) => (
                       <div key={ts.tag.id} className="flex items-center gap-3">
@@ -208,7 +253,7 @@ export const StatsPopup: React.FC<StatsPopupProps> = ({ anime, tags }) => {
                           {ts.tag.name}
                         </Badge>
                         <span className="text-slate-400 text-sm ml-auto">
-                          {ts.count} anime
+                          {ts.count}
                         </span>
                       </div>
                     ))}
@@ -237,6 +282,35 @@ export const StatsPopup: React.FC<StatsPopupProps> = ({ anime, tags }) => {
                       </div>
                     ))}
                     {stats.highestRatedTags.length === 0 && (
+                      <p className="text-slate-500 text-sm">Not enough data</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Best Studios */}
+                <div>
+                  <h3 className="text-lg font-semibold text-white mb-4">🎬 Best Studios</h3>
+                  <p className="text-xs text-slate-500 -mt-3 mb-3">(weighted avg)</p>
+                  <div className="space-y-3">
+                    {stats.bestStudios.map((ts, index) => (
+                      <div key={ts.tag.id} className="flex items-center gap-3">
+                        <span className="text-lg font-bold text-slate-500 w-6">
+                          {index + 1}
+                        </span>
+                        <Badge color={getColor(ts.tag.colorKey)}>
+                          {ts.tag.name}
+                        </Badge>
+                        <div className="ml-auto text-right">
+                          <span className="text-amber-400 text-sm font-semibold">
+                            {ts.weightedScore.toFixed(2)}
+                          </span>
+                          <span className="text-slate-500 text-xs ml-1">
+                            ({ts.count})
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    {stats.bestStudios.length === 0 && (
                       <p className="text-slate-500 text-sm">Not enough data</p>
                     )}
                   </div>
