@@ -14,10 +14,13 @@ export const TagBadge: React.FC<TagBadgeProps> = ({ tag }) => {
     return luminance > 0.5 ? '#000000' : '#ffffff';
   };
 
+  // System tags (status & type) get a ring to distinguish from custom tags
+  const isSystemTag = tag.isStatus || tag.isType;
+
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-        tag.isStatus ? 'ring-1 ring-white/20' : ''
+        isSystemTag ? 'ring-1 ring-white/20' : ''
       }`}
       style={{
         backgroundColor: tag.color,

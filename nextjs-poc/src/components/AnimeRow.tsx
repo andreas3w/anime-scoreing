@@ -37,7 +37,6 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags }) => {
       <td className="px-4 py-3 font-medium text-white max-w-xs truncate" title={anime.title}>
         {anime.title}
       </td>
-      <td className="px-4 py-3 text-slate-400 text-center">{anime.type || '—'}</td>
       <td className="px-4 py-3 text-center">
         <span className={anime.myScore > 0 ? 'text-amber-400 font-bold' : 'text-slate-500'}>
           {anime.myScore > 0 ? anime.myScore : '—'}

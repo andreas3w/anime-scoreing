@@ -21,9 +21,10 @@ export const TagsCell: React.FC<TagsCellProps> = ({
   onAddTag,
   onRemoveTag,
 }) => {
-  // Extract tag from junction table
+  // Extract tags from junction table by category
+  const typeTags = tags.filter((at) => at.tag.isType).map((at) => at.tag);
   const statusTags = tags.filter((at) => at.tag.isStatus).map((at) => at.tag);
-  const customTags = tags.filter((at) => !at.tag.isStatus).map((at) => at.tag);
+  const customTags = tags.filter((at) => !at.tag.isStatus && !at.tag.isType).map((at) => at.tag);
 
   if (isEditing) {
     return (
@@ -39,6 +40,9 @@ export const TagsCell: React.FC<TagsCellProps> = ({
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
+      {typeTags.map((tag) => (
+        <TagBadge key={tag.id} tag={tag} />
+      ))}
       {statusTags.map((tag) => (
         <TagBadge key={tag.id} tag={tag} />
       ))}

@@ -7,11 +7,11 @@ import { XMLParser } from 'fast-xml-parser';
 // Server Action: Save tags for an anime
 // Called directly from client components - no API endpoint needed!
 export async function saveTags(animeId: number, tagNames: string[]) {
-  // Remove existing custom tags (not status tags)
+  // Remove existing custom tags (not status or type tags)
   await prisma.animeTag.deleteMany({
     where: {
       animeId,
-      tag: { isStatus: false },
+      tag: { isStatus: false, isType: false },
     },
   });
 
@@ -62,10 +62,12 @@ export async function importMalXml(formData: FormData) {
     const malId = entry.series_animedb_id;
     if (!malId) continue;
 
+    const animeType = entry.series_type || null;
+
     const data = {
       malId,
       title: entry.series_title || 'Unknown',
-      type: entry.series_type || null,
+      type: animeType, // Keep for backwards compatibility
       episodes: entry.series_episodes || null,
       myScore: entry.my_score || 0,
       myStatus: entry.my_status || null,
@@ -79,10 +81,66 @@ export async function importMalXml(formData: FormData) {
 
     if (existing) {
       await prisma.anime.update({ where: { malId }, data });
+
+      // Update type tag if changed
+      if (animeType) {
+        // Remove old type tag
+        await prisma.animeTag.deleteMany({
+          where: {
+            animeId: existing.id,
+            tag: { isType: true },
+          },
+        });
+
+        // Add new type tag
+        const typeTag = await prisma.tag.upsert({
+          where: { name: animeType },
+          create: { name: animeType, isType: true, color: getTypeColor(animeType) },
+          update: {},
+        });
+        await prisma.animeTag.create({
+          data: { animeId: existing.id, tagId: typeTag.id },
+        });
+      }
+
+      // Update status tag if changed
+      const statusName = statusMap[entry.my_status];
+      if (statusName) {
+        // Remove old status tag
+        await prisma.animeTag.deleteMany({
+          where: {
+            animeId: existing.id,
+            tag: { isStatus: true },
+          },
+        });
+
+        // Add new status tag
+        const statusTag = await prisma.tag.upsert({
+          where: { name: statusName },
+          create: { name: statusName, isStatus: true, color: getStatusColor(statusName) },
+          update: {},
+        });
+        await prisma.animeTag.create({
+          data: { animeId: existing.id, tagId: statusTag.id },
+        });
+      }
+
       updated++;
     } else {
       const anime = await prisma.anime.create({ data });
       created++;
+
+      // Add type tag for new entries
+      if (animeType) {
+        const typeTag = await prisma.tag.upsert({
+          where: { name: animeType },
+          create: { name: animeType, isType: true, color: getTypeColor(animeType) },
+          update: {},
+        });
+        await prisma.animeTag.create({
+          data: { animeId: anime.id, tagId: typeTag.id },
+        });
+      }
 
       // Add status tag for new entries
       const statusName = statusMap[entry.my_status];
@@ -112,4 +170,16 @@ function getStatusColor(status: string): string {
     'Plan to Watch': '#64748b',
   };
   return colors[status] || '#6366f1';
+}
+
+function getTypeColor(type: string): string {
+  const colors: Record<string, string> = {
+    TV: '#3b82f6',
+    Movie: '#8b5cf6',
+    OVA: '#ec4899',
+    ONA: '#14b8a6',
+    Special: '#f59e0b',
+    Music: '#10b981',
+  };
+  return colors[type] || '#64748b';
 }

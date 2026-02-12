@@ -13,7 +13,6 @@ interface AnimeTableProps {
 
 const columns = [
   { key: 'title', label: 'Title', sortable: true },
-  { key: 'type', label: 'Type', sortable: true },
   { key: 'myScore', label: 'Score', sortable: true },
   { key: 'episodes', label: 'Progress', sortable: false },
   { key: 'tags', label: 'Tags', sortable: false },

@@ -29,6 +29,7 @@ model Tag {
   name     String     @unique
   color    String     @default("#6366f1")
   isStatus Boolean    @default(false)
+  isType   Boolean    @default(false)
   anime    AnimeTag[]
 }
 
