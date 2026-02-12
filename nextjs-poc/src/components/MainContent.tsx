@@ -8,6 +8,7 @@ import { FilterBar } from './FilterBar';
 import { ImportButton } from './ImportButton';
 import { FetchTitlesButton } from './FetchTitlesButton';
 import { ComparisonGame } from './ComparisonGame';
+import { StatsPopup } from './StatsPopup';
 
 interface MainContentProps {
   initialAnime: AnimeWithTags[];
@@ -96,6 +97,7 @@ export const MainContent: React.FC<MainContentProps> = ({ initialAnime, initialT
               </p>
             </div>
             <div className="flex gap-2">
+              <StatsPopup anime={initialAnime} tags={initialTags} />
               <ComparisonGame anime={initialAnime} />
               <FetchTitlesButton />
               <ImportButton onImportComplete={handleImportComplete} />
