@@ -26,12 +26,28 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay
     });
   };
 
-  // Always show Romaji as the main title
-  const mainTitle = anime.title;
-  // Show English subtitle when Romaji or English is selected (if available and different from main title)
-  const subtitleTitle = (titleDisplay === 'default' || titleDisplay === 'english') && anime.titleEnglish && anime.titleEnglish !== mainTitle
-    ? anime.titleEnglish
-    : null;
+  // Determine main and subtitle based on title display setting
+  const getMainTitle = (): string => {
+    if (titleDisplay === 'english' && anime.titleEnglish) {
+      return anime.titleEnglish;
+    }
+    return anime.title; // Romaji/Original
+  };
+
+  const getSubtitle = (): string | null => {
+    if (titleDisplay === 'english' && anime.titleEnglish && anime.titleEnglish !== anime.title) {
+      // English is main, show Romaji as subtitle
+      return anime.title;
+    }
+    if (titleDisplay === 'default' && anime.titleEnglish && anime.titleEnglish !== anime.title) {
+      // Romaji is main, show English as subtitle
+      return anime.titleEnglish;
+    }
+    return null;
+  };
+
+  const mainTitle = getMainTitle();
+  const subtitleTitle = getSubtitle();
 
   // Categorize tags
   const statusTags = anime.tags.filter((at) => at.tag.isStatus);
@@ -122,7 +138,7 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay
       {/* Studio Cell */}
       <td className="px-4 py-3 max-w-[150px]">
         <div className="flex flex-wrap gap-1">
-          {studioTags.slice(0, 2).map((at) => (
+          {studioTags.map((at) => (
             <button
               key={at.tag.id}
               onClick={() => onTagClick(at.tag.id)}
@@ -133,16 +149,13 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay
               <span className="truncate">{at.tag.name}</span>
             </button>
           ))}
-          {studioTags.length > 2 && (
-            <span className="text-xs text-slate-500">+{studioTags.length - 2}</span>
-          )}
         </div>
       </td>
 
       {/* Genre Cell */}
       <td className="px-4 py-3 max-w-[200px]">
         <div className="flex flex-wrap gap-1">
-          {genreTags.slice(0, 3).map((at) => (
+          {genreTags.map((at) => (
             <button
               key={at.tag.id}
               onClick={() => onTagClick(at.tag.id)}
@@ -152,9 +165,6 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags, titleDisplay
               {at.tag.name}
             </button>
           ))}
-          {genreTags.length > 3 && (
-            <span className="text-xs text-slate-500">+{genreTags.length - 3}</span>
-          )}
         </div>
       </td>
 
