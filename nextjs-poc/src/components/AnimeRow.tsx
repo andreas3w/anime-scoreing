@@ -55,7 +55,6 @@ export const AnimeRow: React.FC<AnimeRowProps> = ({ anime, allTags }) => {
           onRemoveTag={removeTag}
         />
       </td>
-      <td className="px-4 py-3 text-slate-500 text-sm">{formatDate(anime.myLastUpdated)}</td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2 justify-end">
           {editState.isEditing ? (

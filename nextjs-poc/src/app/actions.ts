@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma } from '@/lib/prisma';
+import { prisma, STATUS_COLORS, TYPE_COLORS, DEFAULT_TAG_COLOR } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { XMLParser } from 'fast-xml-parser';
 
@@ -162,24 +162,9 @@ export async function importMalXml(formData: FormData) {
 }
 
 function getStatusColor(status: string): string {
-  const colors: Record<string, string> = {
-    Watching: '#3b82f6',
-    Completed: '#10b981',
-    'On-Hold': '#f59e0b',
-    Dropped: '#ef4444',
-    'Plan to Watch': '#64748b',
-  };
-  return colors[status] || '#6366f1';
+  return STATUS_COLORS[status] || DEFAULT_TAG_COLOR;
 }
 
 function getTypeColor(type: string): string {
-  const colors: Record<string, string> = {
-    TV: '#3b82f6',
-    Movie: '#8b5cf6',
-    OVA: '#ec4899',
-    ONA: '#14b8a6',
-    Special: '#f59e0b',
-    Music: '#10b981',
-  };
-  return colors[type] || '#64748b';
+  return TYPE_COLORS[type] || DEFAULT_TAG_COLOR;
 }

@@ -27,7 +27,7 @@ model Anime {
 model Tag {
   id       Int        @id @default(autoincrement())
   name     String     @unique
-  color    String     @default("#6366f1")
+  color    String     @default("#4f46e5")
   isStatus Boolean    @default(false)
   isType   Boolean    @default(false)
   anime    AnimeTag[]

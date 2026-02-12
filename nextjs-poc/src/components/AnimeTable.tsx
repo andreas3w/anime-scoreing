@@ -16,7 +16,6 @@ const columns = [
   { key: 'myScore', label: 'Score', sortable: true },
   { key: 'episodes', label: 'Progress', sortable: false },
   { key: 'tags', label: 'Tags', sortable: false },
-  { key: 'updatedAt', label: 'Updated', sortable: true },
   { key: 'actions', label: '', sortable: false },
 ];
 
