@@ -114,8 +114,9 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, tags, onFiltersCh
     onFiltersChange({});
   }, [onFiltersChange]);
 
+  const typeTags = tags.filter((t) => t.isType);
   const statusTags = tags.filter((t) => t.isStatus);
-  const customTags = tags.filter((t) => !t.isStatus);
+  const customTags = tags.filter((t) => !t.isStatus && !t.isType);
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-4">
@@ -170,9 +171,23 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, tags, onFiltersCh
       </div>
 
       {/* Tags Filter Row */}
-      {(statusTags.length > 0 || customTags.length > 0) && (
+      {(typeTags.length > 0 || statusTags.length > 0 || customTags.length > 0) && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm text-slate-400 mr-2">Filter by tag:</span>
+          {typeTags.map((tag) => (
+            <button
+              key={tag.id}
+              onClick={() => toggleTag(tag.id)}
+              className={`transition-opacity ${selectedTagIds.has(tag.id) ? 'opacity-100' : 'opacity-50 hover:opacity-75'}`}
+            >
+              <Badge color={tag.color} isStatus>
+                {tag.name}
+              </Badge>
+            </button>
+          ))}
+          {typeTags.length > 0 && statusTags.length > 0 && (
+            <span className="text-slate-700 mx-1">|</span>
+          )}
           {statusTags.map((tag) => (
             <button
               key={tag.id}
@@ -184,7 +199,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({ filters, tags, onFiltersCh
               </Badge>
             </button>
           ))}
-          {statusTags.length > 0 && customTags.length > 0 && (
+          {(typeTags.length > 0 || statusTags.length > 0) && customTags.length > 0 && (
             <span className="text-slate-700 mx-1">|</span>
           )}
           {customTags.map((tag) => (
