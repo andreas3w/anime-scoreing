@@ -1,4 +1,5 @@
 import { clsx } from 'clsx';
+import { DEFAULT_TAG_COLOR } from '@/lib/prisma';
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -10,32 +11,19 @@ interface BadgeProps {
 
 export const Badge: React.FC<BadgeProps> = ({
   children,
-  color = '#64748b',
+  color = DEFAULT_TAG_COLOR,
   isStatus = false,
   onRemove,
   className,
 }) => {
-  // Generate readable text color based on background
-  const getTextColor = (bgColor: string) => {
-    const hex = bgColor.replace('#', '');
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance > 0.5 ? '#000000' : '#ffffff';
-  };
-
   return (
     <span
       className={clsx(
-        'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium',
+        'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium text-white',
         isStatus && 'ring-1 ring-white/20',
         className
       )}
-      style={{
-        backgroundColor: color,
-        color: getTextColor(color),
-      }}
+      style={{ backgroundColor: color }}
     >
       {children}
       {onRemove && (
