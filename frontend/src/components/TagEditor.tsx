@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Tag } from '../types';
 import { Badge } from './ui/Badge';
-import { Input } from './ui/Input';
 
 interface TagEditorProps {
   currentTags: string[];
@@ -19,15 +18,72 @@ export const TagEditor: React.FC<TagEditorProps> = ({
   onRemoveTag,
 }) => {
   const [inputValue, setInputValue] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Get custom tags only (not status tags) for suggestions
+  const customTags = allTags.filter((t) => !t.isStatus);
+
+  // Filter suggestions based on input
+  const suggestions = customTags.filter((tag) => {
+    const matchesInput = tag.name.toLowerCase().includes(inputValue.toLowerCase());
+    const notAlreadyAdded = !currentTags.includes(tag.name);
+    return matchesInput && notAlreadyAdded && inputValue.length > 0;
+  });
+
+  // Reset selected index when suggestions change
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [suggestions.length]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSelect = (tagName: string) => {
+    onAddTag(tagName);
+    setInputValue('');
+    setShowSuggestions(false);
+    inputRef.current?.focus();
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
-      if (inputValue.trim()) {
+      setSelectedIndex((prev) => Math.min(prev + 1, suggestions.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex((prev) => Math.max(prev - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (suggestions.length > 0 && showSuggestions) {
+        handleSelect(suggestions[selectedIndex].name);
+      } else if (inputValue.trim()) {
         onAddTag(inputValue.trim());
         setInputValue('');
       }
+    } else if (e.key === 'Escape') {
+      setShowSuggestions(false);
     }
+  };
+
+  const handleInputChange = (value: string) => {
+    setInputValue(value);
+    setShowSuggestions(value.length > 0);
   };
 
   // Find tag info for current tags (for colors)
@@ -58,15 +114,44 @@ export const TagEditor: React.FC<TagEditorProps> = ({
         );
       })}
 
-      {/* Input for adding new tags */}
-      <Input
-        type="text"
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Add tag..."
-        className="h-7 w-24 text-xs px-2"
-      />
+      {/* Input with autocomplete for adding new tags */}
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onFocus={() => inputValue.length > 0 && setShowSuggestions(true)}
+          placeholder="Add tag..."
+          className="h-7 w-28 text-xs px-2 rounded-md border border-slate-700 bg-slate-800 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+
+        {/* Suggestions dropdown */}
+        {showSuggestions && suggestions.length > 0 && (
+          <div
+            ref={suggestionsRef}
+            className="absolute top-full left-0 mt-1 w-48 max-h-40 overflow-y-auto bg-slate-800 border border-slate-700 rounded-md shadow-lg z-50"
+          >
+            {suggestions.map((tag, index) => (
+              <button
+                key={tag.id}
+                type="button"
+                onClick={() => handleSelect(tag.name)}
+                className={`w-full px-3 py-1.5 text-left text-xs flex items-center gap-2 hover:bg-slate-700 ${
+                  index === selectedIndex ? 'bg-slate-700' : ''
+                }`}
+              >
+                <span
+                  className="w-3 h-3 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: tag.color }}
+                />
+                <span className="text-white truncate">{tag.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
