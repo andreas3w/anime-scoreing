@@ -96,7 +96,7 @@ export async function saveTags(animeId: number, tagNames: string[]) {
 ## Project Structure
 
 ```
-nextjs-poc/
+/
 ├── src/
 │   ├── app/
 │   │   ├── page.tsx          # Server Component - main page with data fetching
@@ -539,7 +539,6 @@ model AnimeTag {
 
 ### Running the Application
 ```bash
-cd nextjs-poc
 npm install
 npm run db:generate
 npm run db:migrate

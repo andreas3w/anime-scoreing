@@ -1,10 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "sqlite"
-  url      = "file:../data/anime.db"
+  url      = env("DATABASE_URL")
 }
 
 // Note: SQLite doesn't support enums, so colorKey is stored as String

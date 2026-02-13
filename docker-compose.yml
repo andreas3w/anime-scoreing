@@ -1,0 +1,25 @@
+services:
+  anime-list-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: anime-list-manager
+    restart: unless-stopped
+    ports:
+      - "3030:3000"
+    volumes:
+      # Persist SQLite database
+      - anime-data:/app/data
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: "file:/app/data/anime.db"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  anime-data:
+    driver: local

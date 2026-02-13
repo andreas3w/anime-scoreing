@@ -3,6 +3,13 @@ CREATE TABLE "Anime" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "malId" INTEGER NOT NULL,
     "title" TEXT NOT NULL,
+    "titleEnglish" TEXT,
+    "titleJapanese" TEXT,
+    "imageUrl" TEXT,
+    "synopsis" TEXT,
+    "trailerUrl" TEXT,
+    "year" INTEGER,
+    "dataFetched" BOOLEAN NOT NULL DEFAULT false,
     "type" TEXT,
     "episodes" INTEGER,
     "myScore" INTEGER NOT NULL DEFAULT 0,
@@ -19,9 +26,11 @@ CREATE TABLE "Anime" (
 CREATE TABLE "Tag" (
     "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     "name" TEXT NOT NULL,
-    "color" TEXT NOT NULL DEFAULT '#6366f1',
+    "colorKey" TEXT NOT NULL DEFAULT 'DEFAULT',
     "isStatus" BOOLEAN NOT NULL DEFAULT false,
-    "isType" BOOLEAN NOT NULL DEFAULT false
+    "isType" BOOLEAN NOT NULL DEFAULT false,
+    "isStudio" BOOLEAN NOT NULL DEFAULT false,
+    "isGenre" BOOLEAN NOT NULL DEFAULT false
 );
 
 -- CreateTable

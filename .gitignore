@@ -50,3 +50,6 @@ backend/prisma/*.db-journal
 tmp/
 temp/
 *.tmp
+
+# Deploy zips
+*.zip
