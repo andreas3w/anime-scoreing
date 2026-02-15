@@ -1,6 +1,6 @@
 'use client';
 
-import type { AnimeTag, Tag } from '@/lib/prisma';
+import type { AnimeTag, Tag } from '@/lib/colors';
 import { TagBadge } from './TagBadge';
 import { TagEditor } from './TagEditor';
 

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import type { Tag } from '@/lib/prisma';
-import { getColor } from '@/lib/prisma';
+import type { Tag } from '@/lib/colors';
+import { getColor } from '@/lib/colors';
 import { Badge } from './ui/Badge';
 
 interface TagEditorProps {

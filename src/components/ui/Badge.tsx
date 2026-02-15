@@ -1,5 +1,5 @@
 import { clsx } from 'clsx';
-import { getColor } from '@/lib/prisma';
+import { getColor } from '@/lib/colors';
 
 interface BadgeProps {
   children: React.ReactNode;

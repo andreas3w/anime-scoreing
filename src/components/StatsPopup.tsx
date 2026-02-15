@@ -3,8 +3,8 @@
 import { useState, useMemo } from 'react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
-import type { AnimeWithTags, Tag } from '@/lib/prisma';
-import { getColor } from '@/lib/prisma';
+import type { AnimeWithTags, Tag } from '@/lib/colors';
+import { getColor } from '@/lib/colors';
 
 interface StatsPopupProps {
   anime: AnimeWithTags[];

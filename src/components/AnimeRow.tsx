@@ -1,8 +1,8 @@
 'use client';
 
 import { useTransition } from 'react';
-import type { AnimeWithTags, Tag } from '@/lib/prisma';
-import { getColor } from '@/lib/prisma';
+import type { AnimeWithTags, Tag } from '@/lib/colors';
+import { getColor } from '@/lib/colors';
 import { Button } from './ui/Button';
 import { TagsCell } from './TagsCell';
 import { useRowEditState } from '@/hooks/useRowEditState';

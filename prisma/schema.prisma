@@ -22,6 +22,7 @@ model Anime {
   trailerUrl         String?
   year               Int?
   dataFetched        Boolean    @default(false)
+  malScore           Float?
   type               String?
   episodes           Int?
   myScore            Int        @default(0)

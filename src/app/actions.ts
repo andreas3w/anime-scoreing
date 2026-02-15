@@ -40,8 +40,22 @@ export async function saveTags(animeId: number, tagNames: string[]) {
   revalidatePath('/');
 }
 
-// Server Action: Import MAL XML
-export async function importMalXml(formData: FormData) {
+// Parsed MAL entry shape returned to the client for progressive import
+export interface ParsedMalEntry {
+  malId: number;
+  title: string;
+  type: string | null;
+  episodes: number | null;
+  myScore: number;
+  myStatus: string | null;
+  myWatchedEpisodes: number;
+  myStartDate: string | null;
+  myFinishDate: string | null;
+  myLastUpdated: string | null;
+}
+
+// Server Action: Parse MAL XML and return entries (fast, no DB writes)
+export async function parseMalXml(formData: FormData): Promise<ParsedMalEntry[]> {
   const file = formData.get('file') as File;
   if (!file) throw new Error('No file provided');
 
@@ -52,28 +66,16 @@ export async function importMalXml(formData: FormData) {
   const animeEntries = result.myanimelist?.anime || [];
   const entries = Array.isArray(animeEntries) ? animeEntries : [animeEntries];
 
-  let created = 0;
-  let updated = 0;
-
-  // Status tag mapping
-  const statusMap: Record<string, string> = {
-    Watching: 'Watching',
-    Completed: 'Completed',
-    'On-Hold': 'On-Hold',
-    Dropped: 'Dropped',
-    'Plan to Watch': 'Plan to Watch',
-  };
+  const parsed: ParsedMalEntry[] = [];
 
   for (const entry of entries) {
     const malId = entry.series_animedb_id;
     if (!malId) continue;
 
-    const animeType = entry.series_type || null;
-
-    const data = {
+    parsed.push({
       malId,
       title: entry.series_title || 'Unknown',
-      type: animeType, // Keep for backwards compatibility
+      type: entry.series_type || null,
       episodes: entry.series_episodes || null,
       myScore: entry.my_score || 0,
       myStatus: entry.my_status || null,
@@ -81,90 +83,10 @@ export async function importMalXml(formData: FormData) {
       myStartDate: entry.my_start_date || null,
       myFinishDate: entry.my_finish_date || null,
       myLastUpdated: entry.my_last_updated || null,
-    };
-
-    const existing = await prisma.anime.findUnique({ where: { malId } });
-
-    if (existing) {
-      await prisma.anime.update({ where: { malId }, data });
-
-      // Update type tag if changed
-      if (animeType) {
-        // Remove old type tag
-        await prisma.animeTag.deleteMany({
-          where: {
-            animeId: existing.id,
-            tag: { isType: true },
-          },
-        });
-
-        // Add new type tag
-        const typeTag = await prisma.tag.upsert({
-          where: { name: animeType },
-          create: { name: animeType, isType: true, colorKey: getColorKeyForTag(animeType, false) },
-          update: {},
-        });
-        await prisma.animeTag.create({
-          data: { animeId: existing.id, tagId: typeTag.id },
-        });
-      }
-
-      // Update status tag if changed
-      const statusName = statusMap[entry.my_status];
-      if (statusName) {
-        // Remove old status tag
-        await prisma.animeTag.deleteMany({
-          where: {
-            animeId: existing.id,
-            tag: { isStatus: true },
-          },
-        });
-
-        // Add new status tag
-        const statusTag = await prisma.tag.upsert({
-          where: { name: statusName },
-          create: { name: statusName, isStatus: true, colorKey: getColorKeyForTag(statusName, false) },
-          update: {},
-        });
-        await prisma.animeTag.create({
-          data: { animeId: existing.id, tagId: statusTag.id },
-        });
-      }
-
-      updated++;
-    } else {
-      const anime = await prisma.anime.create({ data });
-      created++;
-
-      // Add type tag for new entries
-      if (animeType) {
-        const typeTag = await prisma.tag.upsert({
-          where: { name: animeType },
-          create: { name: animeType, isType: true, colorKey: getColorKeyForTag(animeType, false) },
-          update: {},
-        });
-        await prisma.animeTag.create({
-          data: { animeId: anime.id, tagId: typeTag.id },
-        });
-      }
-
-      // Add status tag for new entries
-      const statusName = statusMap[entry.my_status];
-      if (statusName) {
-        const statusTag = await prisma.tag.upsert({
-          where: { name: statusName },
-          create: { name: statusName, isStatus: true, colorKey: getColorKeyForTag(statusName, false) },
-          update: {},
-        });
-        await prisma.animeTag.create({
-          data: { animeId: anime.id, tagId: statusTag.id },
-        });
-      }
-    }
+    });
   }
 
-  revalidatePath('/');
-  return { created, updated, failed: 0, total: entries.length };
+  return parsed;
 }
 
 // Interface for Jikan API response

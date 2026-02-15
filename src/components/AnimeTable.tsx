@@ -1,6 +1,6 @@
 'use client';
 
-import type { AnimeWithTags, Tag } from '@/lib/prisma';
+import type { AnimeWithTags, Tag } from '@/lib/colors';
 import { AnimeRow } from './AnimeRow';
 
 interface AnimeTableProps {

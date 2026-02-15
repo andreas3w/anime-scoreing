@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import type { AnimeWithTags, Tag, FilterOptions, ImportResult } from '@/lib/prisma';
+import type { AnimeWithTags, Tag, FilterOptions, ImportResult } from '@/lib/colors';
 import { AnimeTable } from './AnimeTable';
 import { FilterBar } from './FilterBar';
 import { ImportButton } from './ImportButton';

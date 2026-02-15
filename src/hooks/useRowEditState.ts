@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import type { AnimeTag } from '@/lib/prisma';
+import type { AnimeTag } from '@/lib/colors';
 
 interface RowEditState {
   isEditing: boolean;

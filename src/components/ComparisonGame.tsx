@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { Button } from './ui/Button';
-import type { AnimeWithTags } from '@/lib/prisma';
+import type { AnimeWithTags } from '@/lib/colors';
 
 interface ComparisonGameProps {
   anime: AnimeWithTags[];
